@@ -1,0 +1,9 @@
+Oct 6th:
+
+Contact netsoc about what the story see if I can get an openstack service running.
+
+Emailed TryStack about access to it, but the email address is inactive, almost to the point of assuming the project is shut down possibly.
+
+cloudyn research trial -> Email sent about that, but unlikely to get back to me, will checkout Bitnami for a look see, maybe YouTube.
+
+Oct 13th:

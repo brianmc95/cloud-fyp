@@ -1,0 +1,5 @@
+IBM -> OpenStack based possibly, so it seems I could use the bluemix platform, for possible deployments, on top of this the data analytics side would be easily dealt with on the cloud
+
+Analytics side for sure, need to chat and see if openstack deployment of cloud instances is the same though.
+
+It turns out that you do not have availability to the bare compute level stuff which means that I won't have access to this either. But it might be worth contacting the guys who gave the talk to see if I could get access if I really needed to.

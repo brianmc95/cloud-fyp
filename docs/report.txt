@@ -1,0 +1,27 @@
+
+
+Brian McCarthy 114302146
+
+1143021546@umail.ucc.ie, brianmccarthy95@gmail.com
+
+Report Document for Final Year Project
+
+Project:
+Automated Deployment and monitoring of cloud instances across multiple cloud platforms.
+
+Updates:
+
+Wed 4 Oct. 
+
+Implemented basic CLI interface for AWS that can deploy an EC2, it is actually very basic but it works for the most part bar for some reason deploying 2 EBS volumes, possibly the issue is that when an EC2 is made it automatically attaches a basic EBS block. Will need to look into this, but for the moment this is enough. There are a huge number of variables I haven't a clue about with the launching but for the moment I will ignore some of these details, the goal will be to add these later, but really only the basics are important for the time being.
+
+Tuesday 10 Oct.
+
+Running into yet more issues, tryStack pure and simple doesn't work at all.
+We had a talk with IBM and have access to their BlueMix platform, can use that for dev work and probably some data analytics, but I can't deploy stuff directly i.e. no instances. IBM cloud is based off openStack so this may have been an alternative but now appears that's out of the question. I may contact them in future and see if it might be possible to get access but it may be unlikely we will see. 
+For the time being EC2 deployment needs to be finished, I have been assing about doing sweet FA. 
+I contacted a Cork based company that use openStack also, as well as cloudyn, neither have been in contact.
+
+Thursday 12 Oct.
+
+
