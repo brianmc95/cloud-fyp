@@ -27,9 +27,10 @@ class EBS_volume:
         self.snapshot = snapshot
 
         self.__accessID, self.__accessKey = self.__read_in_access_keys(accessID_Local, accessKey_Local)
+        print(self.__accessID, self.__accessKey)
 
         self.__cls = get_driver(Provider.EC2)
-        self.__driver = self.__cls("To be filled in", "To be filled in", region=self.region)
+        self.__driver = self.__cls(self.__accessID, self.__accessKey, region=self.region)
 
         self.attached_nodes = {}
         self.__volume = None
@@ -38,15 +39,15 @@ class EBS_volume:
     def __read_in_access_keys(self, accessIDLocal, accessKeyLocal):
         accessID_file = open(accessIDLocal, "r")
         accessKey_file = open(accessKeyLocal, "r")
-        accessID = accessID_file.readline()
-        accessKey = accessKey_file.readline()
+        accessID = accessID_file.readline().strip()
+        accessKey = accessKey_file.readline().strip()
         return accessID, accessKey
 
     def __str__(self):
         return "< %s , %s , %s >" % (self.size, self.name, self.region)
 
     def __del__(self):
-        return "Volume %s: destroyed" & (self.name)
+        return "Volume %s: destroyed" % (self.name)
 
     def set_size(self, size):
         self.size = size
@@ -98,4 +99,13 @@ class EBS_volume:
             success = self.__driver.attach_volume(self.__volume)
             if success:
                 self.attached_nodes.pop(node.get_name())
+
+def main():
+    myEBS = EBS_volume(8, "myEBS","eu-west-1",
+                accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
+                accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
+    myEBS.create_volume()
+
+if __name__ == "__main__":
+    main()
 
