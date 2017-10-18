@@ -8,6 +8,7 @@
 
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
+from libcloud.compute.base import NodeImage
 import json
 
 
@@ -29,7 +30,7 @@ class EC2:
                  userdata=None, security_groups=[], security_group_ids=[], metadata=None,
                  mincount=1, maxcount=1, clienttoken="", associated_ebs_volumes=[],
                  ebs_optimized=True, subnet=None, placement_group=None, assign_public_id=True,
-                 terminate_on_shutdown=True):
+                 terminate_on_shutdown=True, accessID_Local=".", accessKey_Local="."):
         # Initial setup of EC2 instance.
         self.user = user
         self.name = name
@@ -51,12 +52,21 @@ class EC2:
         self.assign_public_ip = assign_public_id
         self.terminate_on_shutdown = terminate_on_shutdown
 
-        self._cls = get_driver(Provider.EC2)
-        self._driver = self._cls("To be filled in", "To be filled in", region=self.region)
+        self.__accessID, self.__accessKey = self.__read_in_access_keys(accessID_Local, accessKey_Local)
+
+        self.__cls = get_driver(Provider.EC2)
+        self.__driver = self.__cls(self.__accessID, self.__accessKey, region=self.region)
 
     def __str_(self):
         return "%s: %s, %s, %s, %s" % (self.name, self.imageID, self.region,
                                        self.associated_ebs_volumes, self.keyname)
+
+    def __read_in_access_keys(self, accessIDLocal, accessKeyLocal):
+        accessID_file = open(accessIDLocal, "r")
+        accessKey_file = open(accessKeyLocal, "r")
+        accessID = accessID_file.readline().strip()
+        accessKey = accessKey_file.readline().strip()
+        return accessID, accessKey
 
     def set_user(self, user):
         # User object gives access to necessary account details.
@@ -216,23 +226,17 @@ class EC2:
 
     def instantiate_ec2(self):
         # Instantiate the EC2 instance.
-        # sizes = self._driver.list_sizes(self.region)
-        # size = [s for s in sizes if s.id == self.size][0]
-        # images = self._driver.list_images()
-        # image = [i for i in images if i.id == self.imageID][0]
-        # self._driver.create_node(name=self.name, image=image,
-        #                          size=size)
-
-        #regions = self._driver.ex_list_availability_zones(only_available=True)
-        locations = self._driver.list_locations()
-        location = [r for r in locations if r.availability_zone.region_name == self.region][0]
-        print(location)
-        volume = self._driver.create_volume(size=8, name="Test GP volume", ex_volume_type="gp2", location=location)
-
-        print("All done")
+        sizes = self.__driver.list_sizes(self.region)
+        size = [s for s in sizes if s.id == self.size][0]
+        image = NodeImage(id=self.imageID, name=self.name, driver=self.__driver)
+        self.__driver.create_node(name=self.name, image=image, size=size)
+        print("EC2 successfully deployed")
 
 def main():
-    myEC2 = EC2("me", "myEC2", "ami-eb206cfc", "t2.micro", "eu-west-1", "firstTestInstance")
+    myEC2 = EC2("me", "myEC2", "ami-acd005d5", "t2.micro",
+                "eu-west-1", "firstTestInstance",
+                accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
+                accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
     myEC2.instantiate_ec2()
 
 if __name__ == "__main__":
