@@ -9,7 +9,7 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.base import NodeImage
-import json
+from EBS_volume import EBS_volume
 
 
 class EC2:
@@ -27,10 +27,8 @@ class EC2:
     # Need means of accessing public AWS key and private AWS key. But these shouldn't be stored here. in a user class
 
     def __init__(self, user, name, imageID, size, region, keyname,
-                 userdata=None, security_groups=[], security_group_ids=[], metadata=None,
-                 mincount=1, maxcount=1, clienttoken="", associated_ebs_volumes=[],
-                 ebs_optimized=True, subnet=None, placement_group=None, assign_public_id=True,
-                 terminate_on_shutdown=True, accessID_Local=".", accessKey_Local="."):
+                 userdata=None, security_groups=[], mincount=1, maxcount=1,
+                 ebs_optimized=True, accessID_Local=".", accessKey_Local="."):
         # Initial setup of EC2 instance.
         self.user = user
         self.name = name
@@ -40,17 +38,11 @@ class EC2:
         self.keyname = keyname
         self.userdata = userdata
         self.security_groups = security_groups
-        self.security_grous_ids = security_group_ids
-        self.metadata = metadata
         self.mincount = mincount
         self.maxcount = maxcount
-        self.clienttoken = clienttoken
-        self.associated_ebs_volumes = associated_ebs_volumes
         self.ebs_optimized = ebs_optimized
-        self.subnet = subnet
-        self.placement_group = placement_group
-        self.assign_public_ip = assign_public_id
-        self.terminate_on_shutdown = terminate_on_shutdown
+
+        self.EBS_volumes = {}
 
         self.__accessID, self.__accessKey = self.__read_in_access_keys(accessID_Local, accessKey_Local)
 
@@ -59,7 +51,7 @@ class EC2:
 
     def __str_(self):
         return "%s: %s, %s, %s, %s" % (self.name, self.imageID, self.region,
-                                       self.associated_ebs_volumes, self.keyname)
+                                       self.EBS_volumes, self.keyname)
 
     def __read_in_access_keys(self, accessIDLocal, accessKeyLocal):
         accessID_file = open(accessIDLocal, "r")
@@ -92,21 +84,9 @@ class EC2:
         # Key Pair used to access this EC2 instance
         self.keyname = keyname
 
-    def set_userdata(self, userdata):
-        # Any user data associated with this EC2 instance
-        self.userdata = userdata
-
     def set_security_groups(self, security_groups):
         # Security group(s) this instance is associated with
         self.security_groups = security_groups
-
-    def set_security_group_ids(self, security_group_ids):
-        # Special form of security group
-        self.security_grous_ids = security_group_ids
-
-    def set_metadata(self, metadata):
-        # key/value metadata associated with this instance
-        self.metadata = metadata
 
     def set_mincount(self, mincount):
         # Minimum number of this EC2 image to instantiate
@@ -116,37 +96,25 @@ class EC2:
         # Maximum number of this EC2 image to instantiate
         self.maxcount = maxcount
 
-    def set_clienttoken(self, clienttoken):
-        # Unique identifier for this EC2 instance
-        self.clienttoken = clienttoken
-
-    def set_associated_ebs_volumes(self, volumes):
-        # EBS volumes associated with this EC2 instance.
-        self.EBS_volumes = volumes
-
     def set_ebs_optimized(self, ebs_optimized):
         # Boolean representing if this EC2 is optimized for EBS
         self.ebs_optimized = ebs_optimized
 
-    def set_subnet(self, subnet):
-        # Subnet this EC2 is located in
-        self.subnet = subnet
-
-    def set_placement_group(self, placement_group):
-        # Name of placement group this EC2 is in
-        self.placement_group = placement_group
-
-    def set_assign_public_ip(self, assign_public_ip):
-        # Boolean to represent if EC2 should have a public ip address
-        self.assign_public_ip = assign_public_ip
-
-    def set_terminate_on_shutdown(self, terminate_on_shutdown):
-        # Boolean representing if when shutdown this EC2 should terminate
-        self.terminate_on_shutdown = terminate_on_shutdown
-
     def set_ip_addr(self, ip_addr):
         # Setter to get the IP address of the EC2 instance
         self.ip_addr = ip_addr
+
+    def add_associated_ebs_volume(self, volume):
+        # EBS volumes associated with this EC2 instance.
+        self.EBS_volumes[volume.get_name()] = volume
+        self.volume.
+
+    def remove_associated_ebs_volume(self, volumeName):
+        # Remove a volume associated with this EC2 instance
+        if volumeName in self.EBS_volumes:
+            ebs = self.EBS_volumes[volumeName]
+            ebs.dettach_volume(self, volumeName)
+            self.EBS_volumes.pop(volumeName)
 
     def get_user(self):
         # Return the user associated with this EC2 instance
@@ -172,21 +140,9 @@ class EC2:
         # return name of Key Pair used to access this EC2 instance
         return self.keyname
 
-    def get_userdata(self):
-        # return any user data associated with this EC2 instance
-        return self.userdata
-
     def get_security_groups(self):
         # return Security group(s) this instance is associated with
         return self.security_groups
-
-    def get_security_group_ids(self):
-        # return Special form of security group (for vpc instances)
-        return self.security_grous_ids
-
-    def get_metadata(self):
-        # return key/value metadata associated with this instance
-        return self.metadata
 
     def get_mincount(self):
         # return Minimum number of this EC2 image to instantiate
@@ -196,10 +152,6 @@ class EC2:
         # return Maximum number of this EC2 image to instantiate
         return self.maxcount
 
-    def get_clienttoken(self):
-        # return Unique identifier for this EC2 instance
-        return self.clienttoken
-
     def get_associated_ebs_volumes(self):
         # return EBS volumes associated with this EC2 instance.
         return self.EBS_volumes
@@ -208,28 +160,17 @@ class EC2:
         # return Boolean representing if this EC2 is optimized for EBS
         return self.ebs_optimized
 
-    def get_subnet(self):
-        # return Subnet this EC2 is located in
-        return self.subnet
+    def get_ip_addr(self):
+        # Return the IP address of this instance
+        return self.ip_addr
 
-    def get_placement_group(self):
-        # return Name of placement group this EC2 is in
-        return self.placement_group
-
-    def get_assign_public_ip(self):
-        # return Boolean to represent if EC2 should have a public ip address
-        return self.assign_public_ip
-
-    def get_terminate_on_shutdown(self):
-        # return Boolean representing if when shutdown this EC2 should terminate
-        return self.terminate_on_shutdown
-
-    def instantiate_ec2(self):
+    def instantiate_ec2(self, ebs):
         # Instantiate the EC2 instance.
         sizes = self.__driver.list_sizes(self.region)
         size = [s for s in sizes if s.id == self.size][0]
         image = NodeImage(id=self.imageID, name=self.name, driver=self.__driver)
-        self.__driver.create_node(name=self.name, image=image, size=size)
+        self.__driver.create_node(name=self.name, image=image,
+                                  size=size, blockdevicemappings=ebs.get_block_device_mapping())
         print("EC2 successfully deployed")
 
 def main():
@@ -237,7 +178,13 @@ def main():
                 "eu-west-1", "firstTestInstance",
                 accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
                 accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
-    myEC2.instantiate_ec2()
+
+    myEBS = EBS_volume("myEBS", 8, region="eu-west-1", 
+                       accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
+                       accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
+
+    myEC2.add_associated_ebs_volume(myEBS)
+    myEC2.instantiate_ec2(myEBS)
 
 if __name__ == "__main__":
     main()
