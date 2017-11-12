@@ -22,6 +22,17 @@ We had a talk with IBM and have access to their BlueMix platform, can use that f
 For the time being EC2 deployment needs to be finished, I have been assing about doing sweet FA. 
 I contacted a Cork based company that use openStack also, as well as cloudyn, neither have been in contact.
 
-Thursday 12 Oct.
+Tuesday 24th Oct.
+
+Coming into IBM talk about BlueMix, so need to discuss with them get the opportunity to get access to their cloud infrastructure. 
+Got access to vscaler openStack cloud and have been playing with that since last Friday, no instances launched. AWS side, basic instances launched, with the volumes and such. So for the most part going well.
+
+Need to get openStack working i.e. create and deploy volumes and such.
+Sort out aws fully and flesh it out.
+Add a GUI on top of this to actually deploy them with something a little more user friendly.
+
+Need to look into the plotly part then on top, so need aws data or something similar. (whether I get this through deploying a script onto the machines and send results back is something that needs to be debated.)
+
+Need to sign up for the libcloud mailing list and see if any sort of migration tool is in development or not
 
 
