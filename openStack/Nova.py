@@ -13,7 +13,6 @@ from libcloud.compute.types import Provider
 class Nova:
 
     def __init__(self):
-        print("Create Nova instance")
         passFile = open("/Users/BrianMcCarthy/vscalerKeys/pass")
         password = passFile.read().strip()
 
@@ -40,12 +39,6 @@ class Nova:
         # Instantiate the EC2 instance.
         self.__driver.create_node(name="first-auto-deploy", image=self.__nodeImage, size=self.__nodeSize)
         print("Nova successfully deployed")
-
-
-
-
-
-
 
 
 def main():
