@@ -13,6 +13,7 @@ from libcloud.compute.types import Provider
 class Nova:
 
     def __init__(self):
+        # This obviously needs changing but that will be dealt with later.
         passFile = open("/Users/BrianMcCarthy/vscalerKeys/pass")
         password = passFile.read().strip()
 
@@ -22,29 +23,32 @@ class Nova:
                            ex_force_auth_version='2.0_password',
                            ex_tenant_name='bmcc')
 
-        images = self.__driver.list_images()
-        sizes = self.__driver.list_sizes()
+        self.__images = self.__driver.list_images()
+        self.__sizes = self.__driver.list_sizes()
 
-        for image in images:
-            if "Ubuntu" in image.name:
-                self.__nodeImage = image
-                break
+        self.networks = self.__driver.ex_list_networks()
 
-        for size in sizes:
-            if size.name == "m1.small":
-                self.__nodeSize = size
-                break
+    def getImages(self):
+        return self.__images
+
+    def getSizes(self):
+        return self.__sizes
+
+    def setImage(self, image):
+        self.__nodeImage = image
+
+    def setSize(self, size):
+        self.__nodeSize = size
 
     def instantiate_nova(self):
         # Instantiate the EC2 instance.
-        self.__driver.create_node(name="first-auto-deploy", image=self.__nodeImage, size=self.__nodeSize)
-        print("Nova successfully deployed")
-
+        self.__driver.create_node(name="first-auto-deploy",
+                                  image=self.__nodeImage,
+                                  size=self.__nodeSize,
+                                  networks=self.networks)
 
 def main():
     newNova = Nova()
-    newNova.instantiate_nova()
-
 
 if __name__ == "__main__":
     main()
