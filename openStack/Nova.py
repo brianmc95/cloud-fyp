@@ -27,6 +27,7 @@ class Nova:
         self.__sizes = self.__driver.list_sizes()
 
         self.networks = self.__driver.ex_list_networks()
+        self.network = [self.networks[2]]
 
     def getImages(self):
         return self.__images
