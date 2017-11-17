@@ -28,6 +28,7 @@ class Nova:
 
         self.networks = self.__driver.ex_list_networks()
         self.network = [self.networks[2]]
+        self.securityGroups = self.__driver.ex_list_security_groups()
 
     def getImages(self):
         return self.__images
@@ -46,15 +47,16 @@ class Nova:
         self.__driver.create_node(name="first-auto-deploy",
                                   image=self.__nodeImage,
                                   size=self.__nodeSize,
-                                  networks=self.networks)
-
+                                  networks=self.network,
+                                  ex_security_groups=self.securityGroups,
+                                  ex_keyname="vscaler-keypair")
 def main():
     newNova = Nova()
+    newNova.setImage()
+    newNova.instantiate_nova()
 
 if __name__ == "__main__":
     main()
-
-
 
 
 
