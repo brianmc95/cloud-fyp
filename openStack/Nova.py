@@ -19,7 +19,7 @@ class Nova:
 
         OpenStack = get_driver(Provider.OPENSTACK)
         self.__driver = OpenStack("bmcc", password,
-                           ex_force_auth_url='http://identity.api.vscaler.com:5000',
+                               ex_force_auth_url='http://identity.api.vscaler.com:5000',
                            ex_force_auth_version='2.0_password',
                            ex_tenant_name='bmcc')
 
