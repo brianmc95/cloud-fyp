@@ -9,7 +9,7 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.base import NodeImage
-from EBS_volume import EBS_volume
+from aws.EBS_volume import EBS_volume
 
 
 class EC2:
@@ -107,7 +107,6 @@ class EC2:
     def add_associated_ebs_volume(self, volume):
         # EBS volumes associated with this EC2 instance.
         self.EBS_volumes[volume.get_name()] = volume
-        self.volume.
 
     def remove_associated_ebs_volume(self, volumeName):
         # Remove a volume associated with this EC2 instance

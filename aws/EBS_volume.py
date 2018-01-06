@@ -119,12 +119,3 @@ class EBS_volume:
         if success:
             self.attached_nodes.pop(node.get_name())
 
-def main():
-    myEBS = EBS_volume(8, "myEBS", "eu-west-1",
-                accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
-                accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
-    myEBS.create_volume()
-
-if __name__ == "__main__":
-    main()
-
