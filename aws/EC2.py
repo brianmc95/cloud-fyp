@@ -49,6 +49,11 @@ class EC2:
         self.__cls = get_driver(Provider.EC2)
         self.__driver = self.__cls(self.__accessID, self.__accessKey, region=self.region)
 
+        self.__free_tier_images = ["ami-075eca7e", "ami-b09e1ac9", "ami-32b6214b", "ami-c90195b0", "ami-8fd760f6",
+                                   "ami-cddc5bb4", "ami-5bf34b22", "ami-70fe4609", "ami-8668d0ff", "ami-8c77cff5",
+                                   "ami-5fd95e26", "ami-e79e1e9e", "ami-811a9ef8", "ami-d71793ae", "ami-9a8b0ce3",
+                                   "ami-b3cb4cca", "ami-2e832957", "ami-0659cd7f", "ami-974cdbee"]
+
     def __str_(self):
         return "%s: %s, %s, %s, %s" % (self.name, self.imageID, self.region,
                                        self.EBS_volumes, self.keyname)
@@ -172,21 +177,15 @@ class EC2:
                                   size=size, blockdevicemappings=ebs.get_block_device_mapping())
         print("EC2 successfully deployed")
 
-def main():
-    myEC2 = EC2("me", "myEC2", "ami-acd005d5", "t2.micro",
-                "eu-west-1", "firstTestInstance",
-                accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
-                accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
+    def get_images(self):
+        images = []
+        for imageID in self.__free_tier_images:
+            images.append(self.__driver.get_image(imageID))
+        return images
 
-    myEBS = EBS_volume("myEBS", 8, region="eu-west-1", 
-                       accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
-                       accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
-
-    myEC2.add_associated_ebs_volume(myEBS)
-    myEC2.instantiate_ec2(myEBS)
-
-if __name__ == "__main__":
-    main()
+    def get_sizes(self):
+        sizes = self.__driver.list_sizes()
+        return sizes
 
         
     
