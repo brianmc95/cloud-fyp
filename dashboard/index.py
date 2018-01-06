@@ -4,11 +4,25 @@ from dash.dependencies import Input, Output
 
 from dashboard.dashServer import app
 from dashboard.pages import deploymentPage
-from dashboard.pages import mainPage
 
 app.layout = html.Div([
+
     dcc.Location(id='url', refresh=False),
-    html.Div(id='page-content')
+    html.Div(id='page-content'),
+
+])
+
+basicLayout = html.Div([
+    html.H1("Cloud monitoring"),
+    html.H3("Brian McCarthy - 114302146 - FYP"),
+    html.A(html.Button('Deploy') , href='/deploy'),
+    html.A(html.Button('Monitor'), href='/monitor'),
+    html.A(html.Button('Alerts') , href='/alerts'),
+    html.A(html.Button('Migrate'), href='/migrate')])
+
+errorLayout = html.Div([
+    basicLayout,
+    html.P('404: Page not found returning to home page'),
 ])
 
 
@@ -17,10 +31,11 @@ app.layout = html.Div([
 def display_page(pathname):
     if pathname == '/deploy':
          return deploymentPage.layout
-    elif pathname == '/main':
-         return mainPage.layout
+    elif pathname == '/':
+        return basicLayout
     else:
-        return '404'
+        return errorLayout
+
 
 if __name__ == '__main__':
     app.run_server(debug=True)
