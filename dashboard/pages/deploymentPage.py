@@ -3,25 +3,31 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 from openStack import Nova
+from aws import EC2
+from aws import EBS_volume
 from dashboard.dashServer import app
 
 
 # https://github.com/plotly/dash/issues/71
 
-deployableNove = Nova.Nova()
-sizes = deployableNove.getSizes()
-images = deployableNove.getImages()
+deployable_ec2 = EC2.EC2()
+deployable_nove = Nova.Nova()
+
+nova_sizes = deployable_nove.getSizes()
+nova_images = deployable_nove.getImages()
 
 
-imageOptions = []
-for i in range(len(images)):
-    option = {"label": images[i].name, "value": i}
-    imageOptions.append(option)
+def image_size_options(provider):
+    if provider == "aws":
+        imageOptions = []
+        for i in range(len(nova_images)):
+            option = {"label": nova_images[i].name, "value": i}
+            imageOptions.append(option)
 
-sizeOptions = []
-for i in range(len(sizes)):
-    option = {"label": sizes[i].name, "value": i}
-    sizeOptions.append(option)
+        sizeOptions = []
+        for i in range(len(nova_sizes)):
+            option = {"label": nova_sizes[i].name, "value": i}
+            sizeOptions.append(option)
 
 
 layout = html.Div([
@@ -50,8 +56,8 @@ layout = html.Div([
             [State('image', 'value'),
             State('size', 'value')])
 def launch_instance(n_clicks, imageIndex, sizeIndex):
-    deployableNove.setImage(images[imageIndex])
-    deployableNove.setSize(sizes[sizeIndex])
-    deployableNove.instantiate_nova()
-    return u'''The nova instance was launched with: image "{}", of size"{}"'''.format(images[imageIndex], sizes[sizeIndex])
+    deployable_nove.setImage(nova_images[imageIndex])
+    deployable_nove.setSize(nova_sizes[sizeIndex])
+    deployable_nove.instantiate_nova()
+    return u'''The nova instance was launched with: image "{}", of size"{}"'''.format(nova_images[imageIndex], nova_sizes[sizeIndex])
 
