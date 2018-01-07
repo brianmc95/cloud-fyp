@@ -9,11 +9,14 @@ brianmccarthy95@gmail.com
 from libcloud.compute.providers import get_driver
 from libcloud.compute.types import Provider
 
+from nodes import node
 
-class Nova:
 
-    def __init__(self):
+class Nova(node.Node):
+
+    def __init__(self, name, keyPair):
         # This obviously needs changing but that will be dealt with later.
+        super().__init__(name, keyPair)
         passFile = open("/Users/BrianMcCarthy/vscalerKeys/pass")
         password = passFile.read().strip()
 
@@ -29,32 +32,36 @@ class Nova:
         self.networks = self.__driver.ex_list_networks()
         self.network = [self.networks[2]]
 
-    def getImages(self):
+    def get_images(self):
         return self.__images
 
-    def getSizes(self):
+    def get_sizes(self):
         return self.__sizes
 
-    def setImage(self, image):
-        self.__nodeImage = image
+    def set_image(self, imageID):
+        for image in self.__images:
+            if image.id == imageID:
+                self.image = image
 
-    def setSize(self, size):
-        self.__nodeSize = size
+    def set_size(self, sizeID):
+        for size in self.__sizes:
+            if size.id == sizeID:
+                self.size = size
 
-    def instantiate_nova(self):
-        # Instantiate the EC2 instance.
-        self.__driver.create_node(name="first-auto-deploy",
-                                  image=self.__nodeImage,
-                                  size=self.__nodeSize,
+    def instantiate_node(self):
+        # Instantiate the Nova instance
+        self.__driver.create_node(name=self.name,
+                                  image=self.image,
+                                  size=self.size,
                                   networks=self.networks)
 
+
 def main():
-    newNova = Nova()
+    nova = Nova("test", "don't care")
+
 
 if __name__ == "__main__":
     main()
-
-
 
 
 
