@@ -49,9 +49,16 @@ layout = html.Div([
         placeholder="Select size of instance"
     ),
 
-    html.Label("Disk Size"),
+    html.Label("Volume name"),
     dcc.Input(
-        id="disk-size-input",
+        id="volume-name-input",
+        placeholder="Enter name of volume to attach",
+        type="number",
+        value=""
+    ),
+    html.Label("Volume size"),
+    dcc.Input(
+        id="volume-size-input",
         placeholder="Enter Size of volume",
         type="number",
         value=""
@@ -106,8 +113,9 @@ def set_sizes_active(selected_provider):
            State("name-input", "value"),
            State("image-dropdown", "value"),
            State("size-dropdown", "value"),
-           State("disk-size-input", "value")])
-def launch_instance(n_clicks, provider, name, image, size, disk_size):
+           State("volume-name-input", "value"),
+           State("volume-size-input", "value")])
+def launch_instance(n_clicks, provider, name, image, size, volume_name, volume_size):
     if provider == "Vscaler":
         node = deployable_nova
     elif provider == "Amazon Web Services":
@@ -120,6 +128,6 @@ def launch_instance(n_clicks, provider, name, image, size, disk_size):
 
     node.instantiate_node()
 
-    return u"Instance: {} Provider: {} Instance Type: {} Instance Size: {} Disk size: {}".format(name, provider, image, size, disk_size)
+    return u"Instance: {} Provider: {} Instance Type: {} Instance Size: {} Volume name: {} volume size: {}".format(name, provider, image, size, volume_name, volume_size)
 
 
