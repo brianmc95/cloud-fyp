@@ -1,32 +1,22 @@
 import dash_core_components as dcc
 import dash_html_components as html
-from dash.dependencies import Input, Output, State, Event
+from dash.dependencies import Input, Output, State
 
 from dashboard.dashServer import app
-from nodes.aws.EC2 import EC2
-from nodes.aws.EBS_volume import EBS_volume
-from nodes.openStack.Nova import Nova
+from accounts.AWS import AWS
+from accounts.OpenStack import OpenStackProvider
 
-# https://github.com/plotly/dash/issues/71
 
-deployable_ec2 = EC2(user="me", name="myEC2", region="eu-west-1", keyPair="firstTestInstance",
-                     accessID_Local="/Users/BrianMcCarthy/amazonKeys/accessID",
-                     accessKey_Local="/Users/BrianMcCarthy/amazonKeys/sak2")
-deployable_nova = Nova(name="test", keyPair="help me")
+aws = AWS()
+vscaler = OpenStackProvider()
 
-provider_dropdown_options = {
-    "Amazon Web Services": {
-        "images": [{"label": image.name, "value": image.id} for image in deployable_ec2.get_images()],
-        "sizes": [{"label": size.name, "value": size.id} for size in deployable_ec2.get_sizes()]},
-    "Vscaler": {"images": [{"label": image.name, "value": image.id} for image in deployable_nova.get_images()],
-                "sizes": [{"label": size.name, "value": size.id} for size in deployable_nova.get_sizes()]}
-}
+providers = {"Amazon Web Services": aws, "Vscaler": vscaler}
 
 layout = html.Div([
     html.Label("Provider"),
     dcc.Dropdown(
         id="provider-dropdown",
-        options=[{"label": key, "value": key} for key in provider_dropdown_options.keys()]
+        options=[{"label": key, "value": key} for key in providers]
     ),
     html.Label("Name of instance"),
     dcc.Input(
@@ -42,18 +32,33 @@ layout = html.Div([
         placeholder="Select type of instance"
     ),
 
-    html.Label("instance Size"),
+    html.Label("Instance Size"),
     dcc.Dropdown(
         id="size-dropdown",
         searchable=False,
         placeholder="Select size of instance"
+    ),
+    html.Label("Instance Networks"),
+    dcc.Dropdown(
+        id="networks-dropdown",
+        searchable=False,
+        multi=True,
+        placeholder="Select instance Networks"
+    ),
+
+    html.Label("Instance Security"),
+    dcc.Dropdown(
+        id="security-dropdown",
+        searchable=False,
+        multi=True,
+        placeholder="Select security groups instance is in"
     ),
 
     html.Label("Volume name"),
     dcc.Input(
         id="volume-name-input",
         placeholder="Enter name of volume to attach",
-        type="number",
+        type="text",
         value=""
     ),
     html.Label("Volume size"),
@@ -75,7 +80,7 @@ layout = html.Div([
     [Input("provider-dropdown", "value")])
 def set_provider_images(selected_provider):
     if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
-        return provider_dropdown_options[selected_provider]["images"]
+        return [{"label": image.name, "value": image.id} for image in providers[selected_provider].list_images()]
     return ""
 
 
@@ -84,7 +89,29 @@ def set_provider_images(selected_provider):
     [Input("provider-dropdown", "value")])
 def set_provider_sizes(selected_provider):
     if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
-        return provider_dropdown_options[selected_provider]["sizes"]
+        return [{"label": size.name, "value": size.id} for size in providers[selected_provider].list_sizes()]
+    return ""
+
+
+@app.callback(
+    Output("networks-dropdown", "options"),
+    [Input("provider-dropdown", "value")])
+def set_provider_networks(selected_provider):
+    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+        return [{"label": net.name, "value": net.id} for net in providers[selected_provider].list_networks()]
+    return ""
+
+
+@app.callback(
+    Output("security-dropdown", "options"),
+    [Input("provider-dropdown", "value")])
+def set_provider_security_groups(selected_provider):
+    if selected_provider == "Vscaler":
+        return [{"label": sec_group.name, "value": sec_group.id} for sec_group in
+                providers[selected_provider].list_security_groups()]
+    elif selected_provider == "Amazon Web Services":
+        return [{"label": sec_group, "value": sec_group} for sec_group in
+                providers[selected_provider].list_security_groups()]
     return ""
 
 
@@ -107,27 +134,45 @@ def set_sizes_active(selected_provider):
 
 
 @app.callback(
+    Output("networks-dropdown", "searchable"),
+    [Input("provider-dropdown", "value")])
+def set_images_active(selected_provider):
+    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+        return True
+    return False
+
+
+@app.callback(
+    Output("security-dropdown", "searchable"),
+    [Input("provider-dropdown", "value")])
+def set_sizes_active(selected_provider):
+    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+        return True
+    return False
+
+
+@app.callback(
     Output('launch-status', 'children'),
     [Input('launch-button', 'n_clicks')],
     state=[State("provider-dropdown", "value"),
            State("name-input", "value"),
            State("image-dropdown", "value"),
            State("size-dropdown", "value"),
+           State("networks-dropdown", "value"),
+           State("security-dropdown", "value"),
            State("volume-name-input", "value"),
            State("volume-size-input", "value")])
-def launch_instance(n_clicks, provider, name, image, size, volume_name, volume_size):
-    if provider == "Vscaler":
-        node = deployable_nova
-    elif provider == "Amazon Web Services":
-        node = deployable_ec2
-    else:
-        return None
+def launch_instance(n_clicks, provider, name, image_id, size_id, network_ids, security_ids, volume_name, volume_size):
+    deploy_image = providers[provider].get_image(image_id)
+    deploy_size = providers[provider].get_size(size_id)
+    deploy_nets = providers[provider].get_networks(network_ids)
+    deploy_sec = providers[provider].get_security_groups(security_ids)
 
-    node.set_image(image)
-    node.set_size(size)
+    vol = providers[provider].create_volume(name=volume_name, size=volume_size)
+    node = providers[provider].create_node(name=name,
+                                           size=deploy_size,
+                                           image=deploy_image,
+                                           networks=deploy_nets,
+                                           security_groups=deploy_sec)
 
-    node.instantiate_node()
-
-    return u"Instance: {} Provider: {} Instance Type: {} Instance Size: {} Volume name: {} volume size: {}".format(name, provider, image, size, volume_name, volume_size)
-
-
+    providers[provider].attach_volume(node, vol)

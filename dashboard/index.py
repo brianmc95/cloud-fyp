@@ -15,9 +15,9 @@ app.layout = html.Div([
 basicLayout = html.Div([
     html.H1("Cloud monitoring"),
     html.H3("Brian McCarthy - 114302146 - FYP"),
-    html.A(html.Button('Deploy') , href='/deploy'),
+    html.A(html.Button('Deploy'), href='/deploy'),
     html.A(html.Button('Monitor'), href='/monitor'),
-    html.A(html.Button('Alerts') , href='/alerts'),
+    html.A(html.Button('Alerts'), href='/alerts'),
     html.A(html.Button('Migrate'), href='/migrate')])
 
 errorLayout = html.Div([
@@ -27,10 +27,10 @@ errorLayout = html.Div([
 
 
 @app.callback(Output('page-content', 'children'),
-                     [Input('url', 'pathname')])
+              [Input('url', 'pathname')])
 def display_page(pathname):
     if pathname == '/deploy':
-         return deploymentPage.layout
+        return deploymentPage.layout
     elif pathname == '/':
         return basicLayout
     else:
