@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/python3.6
 
 """
     Brian McCarthy 114302146
@@ -42,22 +42,30 @@
 
 import psutil
 import json
-import time
+from datetime import datetime
+import requests
 
 
-class monitor:
+class Monitor:
 
-    def __init__(self, id, name, central_ip):
+    report = None
+
+    def __init__(self, id, name, server_ip, server_port):
         self.instance_id = id
         self.instance_name = name
-        self.central_ip = central_ip
+        self.server_ip = server_ip
+        self.server_port = server_port
         self.previous_net_usage = None
 
     def gen_report(self):
         # Get all our usage information and generate a report based on this.
 
+        today = datetime.now()
+        now = today.strftime("%Y-%m-%d %H:%M:%S")
+
         report = {"INSTANCE_ID": self.instance_id,
                   "INSTANCE_NAME": self.instance_name,
+                  "DATE_TIME": now,
                   "CPU_USAGE": psutil.cpu_percent(interval=5),
                   "MEM_USAGE": {"TOTAL": None,
                                 "AVAIL": None},
@@ -94,13 +102,20 @@ class monitor:
         self.previous_net_usage = network_usage
         report["NET_USAGE"]["CONNECTIONS"] = connections
 
+        self.report = report
+
     def send_report(self):
-        print("send that report")
+        """  http://127.0.0.1:8081/addrecord/  """
+
+        url = "http://{}:{}/addrecord/".format(self.server_ip, self.server_port)
+        r = requests.post(url=url, json=self.report) # Requests deals with converting to json2
+        print(r.status_code)
 
 
 def main():
-    mon = monitor(1, "betty")
+    mon = Monitor(2, "betty", "127.0.0.1", 8081)
     mon.gen_report()
+    mon.send_report()
 
 
 if __name__ == "__main__":

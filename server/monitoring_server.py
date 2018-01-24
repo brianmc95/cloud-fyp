@@ -1,4 +1,4 @@
-# !/usr/bin/env python
+# !/usr/bin/env python3.6
 
 # Files is in essence an updated to python3 version of the server found in the below link
 # https://gist.github.com/mafayaz/faf938a896357c3a4c9d6da27edcff08
@@ -9,22 +9,36 @@ import threading
 import argparse
 import re
 import json
-import pymongo
+from pymongo import MongoClient
+
+# TODO: Add some exception handling for parsing json so we don't have constant errors.
+# TODO: Add some logging to this so it doesn't just sit and do stuff without people knowing
+
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
+
+    client = MongoClient('localhost', 27017)
+
     def do_POST(self):
-        if None != re.search('/addrecord/', self.path):
-            if self.headers["Content-Type"] == 'application/json':
-                length = int(self.headers['content-length'])
-                body = self.rfile.read(length).decode("utf-8")
-                json_dict = json.loads(body)
-            else:
-                data = {}
-            self.send_response(200)
-            self.end_headers()
+        if re.search("/addrecord/", self.path) is not None:
+            if self.headers["Content-Type"] == "application/json":
+                # Decode the message from the instance
+                length = int(self.headers["content-length"])
+                post_body = self.rfile.read(length).decode("utf-8", "ignore")
+
+                self.send_response(200)
+                self.end_headers()
+
+                # Convert to dict
+                instance_info = json.loads(post_body)
+
+                # Put data into mongoDB
+                db = self.client["cloud-fyp"]
+                instances = db["instances"]
+                post_id = instances.insert_one(instance_info).inserted_id
         else:
             self.send_response(403)
-            self.send_header('Content-Type', 'application/json')
+            self.send_header("Content-Type", "application/json")
             self.end_headers()
         return
 
@@ -37,7 +51,7 @@ class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
         HTTPServer.shutdown(self)
 
 
-class SimpleHttpServer():
+class SimpleHttpServer:
     def __init__(self, ip, port):
         self.server = ThreadedHTTPServer((ip, port), HTTPRequestHandler)
 
@@ -48,10 +62,6 @@ class SimpleHttpServer():
 
     def waitForThread(self):
         self.server_thread.join()
-
-    def addRecord(self, recordID, jsonEncodedRecord):
-        print("this occurs")
-        LocalData.records[recordID] = jsonEncodedRecord
 
     def stop(self):
         self.server.shutdown()
