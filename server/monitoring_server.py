@@ -1,6 +1,6 @@
 # !/usr/bin/env python3.6
 
-# Files is in essence an updated to python3 version of the server found in the below link
+# File is in essence an updated to python3 version of the server found in the below link
 # https://gist.github.com/mafayaz/faf938a896357c3a4c9d6da27edcff08
 
 from http.server import BaseHTTPRequestHandler, HTTPServer
