@@ -25,8 +25,9 @@ class OpenStackProvider(Account):
 
     def create_node(self, name, size, image, networks, security_groups):
         # Instantiate the Nova instance.
-        self.driver.create_node(name=name,
-                                size=size,
-                                image=image,
-                                networks=networks,
-                                security_groups=security_groups)
+        node = self.driver.create_node(name=name,
+                                       size=size,
+                                       image=image,
+                                       networks=networks,
+                                       security_groups=security_groups)
+        return node

@@ -46,14 +46,21 @@ class AWS(Account):
         return self.driver.ex_list_availability_zones()
 
     def create_node(self, name, size, image, networks, security_groups):
-        self.driver.create_node(name=name,
-                                size=size,
-                                image=image,
-                                subnet=networks,
-                                security_groups=security_groups)
+        node = self.driver.create_node(name=name,
+                                       size=size,
+                                       image=image,
+                                       subnet=networks,
+                                       security_groups=security_groups)
+        return node
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:
             locations = self.driver.list_locations()
             location = [r for r in locations if r.availability_zone.region_name == self.region][0]
         self.driver.create_volume(name=name, size=size, location=location)
+
+
+if __name__ == "__main__":
+    aws_provider = AWS()
+    sizes = aws_provider.list_sizes()
+    images = aws_provider.list_images()
