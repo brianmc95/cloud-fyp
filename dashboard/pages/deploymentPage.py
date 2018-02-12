@@ -3,11 +3,11 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 from dashboard.dashServer import app
-from accounts.AWS import AWS
-from accounts.OpenStack import OpenStackProvider
+from accounts.AWSProvider import AWSProvider
+from accounts.OpenStackProvider import OpenStackProvider
 
 
-aws = AWS()
+aws = AWSProvider()
 vscaler = OpenStackProvider()
 
 providers = {"Amazon Web Services": aws, "Vscaler": vscaler}
