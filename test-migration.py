@@ -2,6 +2,7 @@
 
 from migration.Migrate import Migrate
 from accounts.AWSProvider import AWSProvider
+import os
 
 
 def run_test():
@@ -13,8 +14,16 @@ def run_test():
     node_key_loc = "/Users/BrianMcCarthy/amazonKeys/firstTestInstance.pem"
 
     mig = Migrate(migration_node, True, node_key_loc)
+    s3 = mig.deploy_S3()
     mig.connect_to_node()
-    mig.copy_image()
+    volumes = mig.transfer_image_to_s3(s3)
+
+    os.mkdir("~/test-migration")
+    for i in range(volumes):
+        mig.pull_image(s3, "tmp/disk{}.img".format(i),"~/test-migration/")
+
+        
+
 
     """except Exception as e:
         print(e)

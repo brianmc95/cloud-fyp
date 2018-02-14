@@ -8,7 +8,7 @@
 
 
 from libcloud.compute.base import NodeDriver
-from libcloud.container.base import ContainerDriver
+from libcloud.storage.base import StorageDriver
 
 import random
 from retrying import retry
@@ -18,7 +18,7 @@ class Account:
 
     def __init__(self):
         self.node_driver = NodeDriver(key="SimpleBase")
-        self.container_driver = ContainerDriver(key="SimpleBase")
+        self.storage_driver = StorageDriver(key="SimpleBase")
 
     def list_images(self):
         return self.node_driver.list_images()
@@ -89,11 +89,20 @@ class Account:
                 return vol
 
     def create_container(self, container_name):
-        print(self.container_driver.list_images())
-        # self.container_driver.deploy_container()
+        return self.storage_driver.create_container(container_name)
+
+    def upload_to_container(self, path, container, object_name):
+        self.storage_driver.upload_object(file_path=path, container=container, object_name=object_name)
+
+    def download_from_container(self, container, file_name, dest):
+        obj = self.storage_driver.get_object(container.name, object_name=file_name)
+        return obj.download(destination_path=dest)
+
+    def delete_object(self):
+        return NotImplementedError
 
     def list_containers(self):
-        return self.container_driver.list_containers()
+        return self.storage_driver.list_containers()
 
     def get_node(self, name=None, id=None):
         for node in self.node_driver.list_nodes():
