@@ -126,7 +126,7 @@ class Migrate:
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
-            cmd = "sudo dd if=/dev/xvda of={}/disk.img".format(device_name, mount_point)
+            cmd = "sudo dd if=/dev/xvda of={}/disk{}.img".format(mount_point, vol_count)
             self.logger.debug("Command to be run: {}".format(cmd))
             stdin, stdout, stderr = self.ssh.exec_command(cmd)
             self.logger.info(stdout.readlines())
