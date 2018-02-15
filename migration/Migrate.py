@@ -94,7 +94,7 @@ class Migrate:
             self.__migration_vols.append(migrate_vol)
 
             device_name = "/dev/xvd{}".format(mounts[vol_count])
-            mount_point = "tmp/disk{}".format(vol_count)
+            mount_point = "/tmp/disk{}".format(vol_count)
             self.logger.info("Device attached: {}, Mount Point: {}, Size: {}".format(device_name,
                                                                                      mount_point,
                                                                                      vol.size))
@@ -159,6 +159,7 @@ class Migrate:
 
             # Once copied to the s3 detach and destroy the volume
             self.aws_prov.detach_volume(vol)
+            time.sleep(120) # sometimes run into issues with this.
             self.aws_prov.destroy_volume(vol)
             self.logger.info("Volume removed and destroyed")
 
