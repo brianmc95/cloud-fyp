@@ -90,7 +90,8 @@ class Migrate:
         vol_count = 0
         mounts = "fghijklmnop"
         for vol in self.__vols:
-            migrate_vol = self.aws_prov.create_volume("migration_vol", vol.size, location=self.__location)
+            # Migration volumes need to be slightly larger than the ones being copied to them
+            migrate_vol = self.aws_prov.create_volume("migration_vol", vol.size + 2, location=self.__location)
             self.__migration_vols.append(migrate_vol)
 
             device_name = "/dev/xvd{}".format(mounts[vol_count])
@@ -144,6 +145,7 @@ class Migrate:
 
         # Add aws credentials to the instance to be copied.
         aws_access_id, aws_secret_key = self.aws_prov.get_key_info()
+        # TODO: Add step to check if awscli is installed if not then install it manually
         stdin, stdout, stderr = self.ssh.exec_command("""aws configure set aws_access_key_id {};
         aws configure set aws_secret_access_key {};
         aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location))
@@ -159,7 +161,7 @@ class Migrate:
 
             # Once copied to the s3 detach and destroy the volume
             self.aws_prov.detach_volume(vol)
-            time.sleep(120) # sometimes run into issues with this.
+            time.sleep(300) # sometimes run into issues with this.
             self.aws_prov.destroy_volume(vol)
             self.logger.info("Volume removed and destroyed")
 
