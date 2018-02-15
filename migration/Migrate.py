@@ -103,23 +103,29 @@ class Migrate:
             if not success:
                 self.logger.critical("Volume could not be attached")
                 return
-
             self.logger.info("Volume attached")
 
-            stdin, stdout, stderr = self.ssh.exec_command("sudo mkfs.ext4 {}".format(device_name))
+            cmd = "sudo mkfs.ext4 {}".format(device_name)
+            self.logger.debug("Command to be run: {}".format(cmd))
+            stdin, stdout, stderr = self.ssh.exec_command(cmd)
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
-            stdin, stdout, stderr = self.ssh.exec_command("sudo mkdir {}".format(mount_point))
+            cmd="sudo mkdir {}".format(mount_point)
+            self.logger.debug("Command to be run: {}".format(cmd))
+            stdin, stdout, stderr = self.ssh.exec_command(cmd)
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
-            stdin, stdout, stderr = self.ssh.exec_command("sudo mount {} {}".format(device_name, mount_point))
+            cmd = "sudo mount {} {}".format(device_name, mount_point)
+            self.logger.debug("Command to be run: {}".format(cmd))
+            stdin, stdout, stderr = self.ssh.exec_command(cmd)
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
-            stdin, stdout, stderr = self.ssh.exec_command("sudo dd if={} of={}/disk.img".format(device_name,
-                                                                                                mount_point))
+            cmd = "sudo dd if={} of={}/disk.img".format(device_name, mount_point)
+            self.logger.debug("Command to be run: {}".format(cmd))
+            stdin, stdout, stderr = self.ssh.exec_command(cmd)
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
