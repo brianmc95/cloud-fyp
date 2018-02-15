@@ -42,6 +42,7 @@ class Migrate:
                 self.logger.debug("Attempt number {} to create S3".format(attempts))
                 attempts += 1
                 randomName = ''.join([random.choice(string.ascii_letters + string.digits) for n in range(32)])
+                randomName = randomName.lower()
                 self.logger.debug("Random name for S3 {}".format(randomName))
                 container = self.aws_prov.create_container(randomName)
                 self.logger.info("S3 Bucket {} created".format(randomName))

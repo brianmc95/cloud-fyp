@@ -16,14 +16,16 @@ def run_test():
     mig = Migrate(migration_node, True, node_key_loc)
     s3 = mig.deploy_S3()
     mig.connect_to_node()
+    mig.copy_image_local()
     volumes = mig.transfer_image_to_s3(s3)
 
-    os.mkdir("~/test-migration")
-    for i in range(volumes):
-        mig.pull_image(s3, "tmp/disk{}.img".format(i),"~/test-migration/")
-
+    try:
+        os.mkdir("~/test-migration")
+    except FileExistsError:
+        print("test-migration folder is already created.")
         
-
+    for i in range(volumes):
+        mig.pull_image(s3.name, "tmp/disk{}.img".format(i), "~/test-migration/")
 
     """except Exception as e:
         print(e)
