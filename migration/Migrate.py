@@ -86,7 +86,7 @@ class Migrate:
 
         migration_vols = []
         vol_count = 0
-        mounts = "bcdefghijklmnopqrstuvwxyz"
+        mounts = "fghijklmnop"
         for vol in self.__vols:
             migrate_vol = self.aws_prov.create_volume("migration_vol", vol.size, location=self.__location)
             migration_vols.append(migrate_vol)
@@ -105,7 +105,7 @@ class Migrate:
 
             self.logger.info("Volume attached")
 
-            stdin, stdout, stderr = self.ssh.exec_command("sudo mkfs -t ext4 {}".format(device_name))
+            stdin, stdout, stderr = self.ssh.exec_command("sudo mkfs.ext4 {}".format(device_name))
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
@@ -117,8 +117,8 @@ class Migrate:
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
-            stdin, stdout, stderr = self.ssh.exec_command(
-                "sudo dd if={} of={}/disk.img".format(device_name, mount_point))
+            stdin, stdout, stderr = self.ssh.exec_command("sudo dd if={} of={}/disk.img".format(device_name,
+                                                                                                mount_point))
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
@@ -137,7 +137,7 @@ class Migrate:
         aws_access_id, aws_secret_key = self.aws_prov.get_key_info()
         stdin, stdout, stderr = self.ssh.exec_command("""aws configure set aws_access_key_id {};
         aws configure set aws_secret_access_key {};
-        aws configure set default.region {}""").format(aws_access_id, aws_secret_key, self.__location)
+        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location))
         self.logger.info(stdout.readlines())
         self.logger.warning(stderr.readlines())
 
