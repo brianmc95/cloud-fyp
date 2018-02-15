@@ -18,7 +18,7 @@ class AWSProvider(Account):
         self.s3cls = storage_providers.get_driver(storage_types.Provider.S3_EU_WEST)
 
         self.node_driver = self.ec2cls(self.__access_id, self.__access_key, region=self.region)
-        self.container_driver = self.s3cls(self.__access_id, self.__access_key, region=self.region)
+        self.storage_driver = self.s3cls(self.__access_id, self.__access_key, region=self.region)
 
         self.__free_tier_images = ["ami-075eca7e", "ami-b09e1ac9", "ami-32b6214b", "ami-c90195b0", "ami-8fd760f6",
                                    "ami-cddc5bb4", "ami-5bf34b22", "ami-70fe4609", "ami-8668d0ff", "ami-8c77cff5",
@@ -69,11 +69,11 @@ class AWSProvider(Account):
         return volume
 
     def create_container(self, container_name):
-        container = self.container_driver.create_container(container_name)
+        container = self.storage_driver.create_container(container_name)
         return container
 
     def get_container(self, container_name):
-        return self.container_driver.get_container(container_name)
+        return self.storage_driver.get_container(container_name)
 
     def list_availability_zones(self):
         return self.node_driver.ex_list_availability_zones()
