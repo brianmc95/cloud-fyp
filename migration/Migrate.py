@@ -148,8 +148,8 @@ class Migrate:
             self.logger.info(stdout.readlines)
             self.logger.warning(stderr.readlines)
 
-            # Once copied to the s3 dettach and destroy the volume
-            self.aws_prov.dettach_volume(self.node, vol)
+            # Once copied to the s3 detach and destroy the volume
+            self.aws_prov.detach_volume(vol)
             self.aws_prov.destroy_volume(vol)
             self.logger.info("Volume removed and destroyed")
 

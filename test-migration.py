@@ -23,7 +23,7 @@ def run_test():
         os.mkdir("~/test-migration")
     except FileExistsError:
         print("test-migration folder is already created.")
-        
+
     for i in range(volumes):
         mig.pull_image(s3.name, "tmp/disk{}.img".format(i), "~/test-migration/")
 

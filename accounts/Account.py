@@ -51,8 +51,8 @@ class Account:
             device = "/dev/sd" + "".join(random.choice("fghijklmnop"))
         return self.node_driver.attach_volume(node, volume, device)
 
-    def dettach_volume(self, node, volume):
-        node.detach_volume(volume)
+    def detach_volume(self, volume):
+        return self.node_driver.detach_volume(volume)
 
     def destroy_volume(self, volume):
         self.node_driver.destroy_volume(volume)
