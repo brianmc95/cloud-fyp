@@ -25,6 +25,7 @@ class Migrate:
         self.password = password
         self.__location = None
         self.__vols = []
+        self.__migration_vols = []
 
         self.logger = logging.getLogger(__name__)
 
@@ -89,7 +90,7 @@ class Migrate:
         mounts = "fghijklmnop"
         for vol in self.__vols:
             migrate_vol = self.aws_prov.create_volume("migration_vol", vol.size, location=self.__location)
-            migration_vols.append(migrate_vol)
+            self.__migration_vols.append(migrate_vol)
 
             device_name = "/dev/xvd{}".format(mounts[vol_count])
             mount_point = "tmp/disk{}".format(vol_count)
@@ -143,7 +144,7 @@ class Migrate:
 
         # Copy each volume to the s3
         vol_count = 0
-        for vol in self.__vols:
+        for vol in self.__migration_vols:
             self.ssh.exec_command("aws s3 cp /tmp/disk{}.img s3://{}/".format(vol_count, bucket_name))
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
