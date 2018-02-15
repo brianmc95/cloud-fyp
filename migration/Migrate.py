@@ -106,21 +106,21 @@ class Migrate:
             self.logger.info("Volume attached")
 
             stdin, stdout, stderr = self.ssh.exec_command("sudo mkfs -t ext4 {}".format(device_name))
-            self.logger.info(stdout.readlines)
-            self.logger.warning(stderr.readlines)
+            self.logger.info(stdout.readlines())
+            self.logger.warning(stderr.readlines())
 
             stdin, stdout, stderr = self.ssh.exec_command("sudo mkdir {}".format(mount_point))
-            self.logger.info(stdout.readlines)
-            self.logger.warning(stderr.readlines)
+            self.logger.info(stdout.readlines())
+            self.logger.warning(stderr.readlines())
 
             stdin, stdout, stderr = self.ssh.exec_command("sudo mount {} {}".format(device_name, mount_point))
-            self.logger.info(stdout.readlines)
-            self.logger.warning(stderr.readlines)
+            self.logger.info(stdout.readlines())
+            self.logger.warning(stderr.readlines())
 
             stdin, stdout, stderr = self.ssh.exec_command(
                 "sudo dd if={} of={}/disk.img".format(device_name, mount_point))
-            self.logger.info(stdout.readlines)
-            self.logger.warning(stderr.readlines)
+            self.logger.info(stdout.readlines())
+            self.logger.warning(stderr.readlines())
 
             vol_count += 1
             self.logger.info("Volume image successfully copied.")
@@ -138,15 +138,15 @@ class Migrate:
         stdin, stdout, stderr = self.ssh.exec_command("""aws configure set aws_access_key_id {};
         aws configure set aws_secret_access_key {};
         aws configure set default.region {}""").format(aws_access_id, aws_secret_key, self.__location)
-        self.logger.info(stdout.readlines)
-        self.logger.warning(stderr.readlines)
+        self.logger.info(stdout.readlines())
+        self.logger.warning(stderr.readlines())
 
         # Copy each volume to the s3
         vol_count = 0
         for vol in self.__vols:
             self.ssh.exec_command("aws s3 cp /tmp/disk{}.img s3://{}/".format(vol_count, bucket_name))
-            self.logger.info(stdout.readlines)
-            self.logger.warning(stderr.readlines)
+            self.logger.info(stdout.readlines())
+            self.logger.warning(stderr.readlines())
 
             # Once copied to the s3 detach and destroy the volume
             self.aws_prov.detach_volume(vol)
