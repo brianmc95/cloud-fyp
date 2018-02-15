@@ -11,6 +11,7 @@ import string
 import paramiko
 from glanceclient import Client
 import logging
+import time
 
 
 class Migrate:
@@ -99,6 +100,7 @@ class Migrate:
                                                                                      vol.size))
 
             success = self.aws_prov.attach_volume(self.node, migrate_vol, device=device_name)
+            time.sleep(120)
 
             if not success:
                 self.logger.critical("Volume could not be attached")
