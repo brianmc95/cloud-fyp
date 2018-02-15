@@ -72,6 +72,9 @@ class AWSProvider(Account):
         container = self.container_driver.create_container(container_name)
         return container
 
+    def get_container(self, container_name):
+        return self.container_driver.get_container(container_name)
+
     def list_availability_zones(self):
         return self.node_driver.ex_list_availability_zones()
 

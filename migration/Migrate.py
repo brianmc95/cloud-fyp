@@ -86,7 +86,7 @@ class Migrate:
 
         migration_vols = []
         vol_count = 0
-        mounts = "abcdefghijklmnopqrstuvwxyz"
+        mounts = "bcdefghijklmnopqrstuvwxyz"
         for vol in self.__vols:
             migrate_vol = self.aws_prov.create_volume("migration_vol", vol.size, location=self.__location)
             migration_vols.append(migrate_vol)
