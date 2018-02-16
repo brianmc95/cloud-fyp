@@ -106,7 +106,7 @@ class Account:
 
     def get_node(self, name=None, id=None):
         for node in self.node_driver.list_nodes():
-            if node.id == id or node.name == name:
+            if (node.id == id or node.name == name) and node.state != "TERMINATED":
                 return node
 
 

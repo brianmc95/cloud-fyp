@@ -165,6 +165,7 @@ class Migrate:
             # Once copied to the s3 detach and destroy the volume
             self.aws_prov.detach_volume(vol)
             time.sleep(300)  # sometimes run into issues with this.
+            # TODO: Change this to a retry type deal
             try:
                 self.aws_prov.destroy_volume(vol)
                 self.logger.info("Volume removed and destroyed")
