@@ -16,5 +16,5 @@ with open("logging-config.json", 'r') as logging_configuration_file:
 logging.config.dictConfig(config_dict)
 
 # Log that the logger was configured
-logger = logging.getLogger(__name__).addHandler(logging.StreamHandler(sys.stdout))
+logger = logging.getLogger(__name__)
 logger.info('Completed configuring logger()!')
