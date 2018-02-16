@@ -158,7 +158,9 @@ class Migrate:
         # Copy each volume to the s3
         vol_count = 0
         for vol in self.__migration_vols:
-            self.ssh.exec_command("aws s3 cp /tmp/disk{}.img s3://{}/".format(vol_count, bucket_name))
+            cmd = "aws s3 cp /tmp/disk{}.img s3://{}/".format(vol_count, bucket_name)
+            self.logger.info("AWS command to copy to S3: {}".format(cmd))
+            self.ssh.exec_command(cmd)
             self.logger.info(stdout.readlines())
             self.logger.warning(stderr.readlines())
 
@@ -191,8 +193,6 @@ class Migrate:
 
     def create_image(self, image_file_loc):
         raise NotImplementedError
-
-
 
     def create_node(self):
         print("Glance part")

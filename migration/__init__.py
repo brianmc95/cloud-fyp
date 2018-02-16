@@ -2,6 +2,7 @@ from os import path, remove
 import logging
 import logging.config
 import json
+import sys
 
 from .Migrate import Migrate
 
@@ -15,5 +16,5 @@ with open("logging-config.json", 'r') as logging_configuration_file:
 logging.config.dictConfig(config_dict)
 
 # Log that the logger was configured
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__).addHandler(logging.StreamHandler(sys.stdout))
 logger.info('Completed configuring logger()!')
