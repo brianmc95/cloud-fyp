@@ -86,7 +86,3 @@ class AWSProvider(Account):
     def get_key_info(self):
         return self.__access_id, self.__access_key
 
-if __name__ == "__main__":
-    aws_provider = AWSProvider()
-    sizes = aws_provider.list_sizes()
-    images = aws_provider.list_images()
