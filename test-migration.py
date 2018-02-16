@@ -38,7 +38,7 @@ def run_test():
         mig_sec = aws_provider.get_security_groups("launch-wizard-1")
         mig_net = aws_provider.get_networks("subnet-82cb7ed9")
         mig_key = aws_provider.list_key_pairs()[0]
-        migration_node = aws_provider.create_node("test-migration", mig_size, mig_image, mig_net, mig_sec)
+        migration_node = aws_provider.create_node("test-migration", mig_size, mig_image, mig_net, mig_sec, mig_key.name)
 
 
 if __name__ == "__main__":
