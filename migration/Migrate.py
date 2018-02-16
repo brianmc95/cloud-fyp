@@ -12,6 +12,7 @@ import paramiko
 from glanceclient import Client
 import logging
 import time
+from libcloud.common.exceptions import  BaseHTTPError
 
 
 class Migrate:
@@ -146,9 +147,11 @@ class Migrate:
         # Add aws credentials to the instance to be copied.
         aws_access_id, aws_secret_key = self.aws_prov.get_key_info()
         # TODO: Add step to check if awscli is installed if not then install it manually
-        stdin, stdout, stderr = self.ssh.exec_command("""aws configure set aws_access_key_id {};
+        cmd = """aws configure set aws_access_key_id {};
         aws configure set aws_secret_access_key {};
-        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location))
+        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location)
+        self.logger.info("Running aws config command: {}".format(cmd))
+        stdin, stdout, stderr = self.ssh.exec_command(cmd)
         self.logger.info(stdout.readlines())
         self.logger.warning(stderr.readlines())
 
@@ -161,9 +164,12 @@ class Migrate:
 
             # Once copied to the s3 detach and destroy the volume
             self.aws_prov.detach_volume(vol)
-            time.sleep(300) # sometimes run into issues with this.
-            self.aws_prov.destroy_volume(vol)
-            self.logger.info("Volume removed and destroyed")
+            time.sleep(300)  # sometimes run into issues with this.
+            try:
+                self.aws_prov.destroy_volume(vol)
+                self.logger.info("Volume removed and destroyed")
+            except BaseHTTPError as e:
+                self.logger.exception("Volume could not be successfully detached and so could not be destroyed")
 
             vol_count += 1
         return vol_count
