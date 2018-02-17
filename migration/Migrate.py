@@ -151,7 +151,7 @@ class Migrate:
         # TODO: Add step to check if awscli is installed if not then install it manually
         cmd = """aws configure set aws_access_key_id {};
         aws configure set aws_secret_access_key {};
-        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location)
+        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location) # location is not correct region
         self.logger.info("Running aws config command: {}".format(cmd))
         stdin, stdout, stderr = self.ssh.exec_command(cmd)
         self.logger.info(stdout.readlines())
@@ -188,16 +188,17 @@ class Migrate:
         :return: None
         """
         # Download the image file
+        self.logger.info("Pulling {} from {} to {}".format(file_name, container, dest))
         success = self.aws_prov.download_from_container(container, file_name, dest)
-        if not success:
-            self.logger.error("Failed to download the img file from s3")
-            return
+        self.logger.info("Image file downloaded with code: {}".format(success))
+        return success
 
     def create_image(self, image_file_loc):
         raise NotImplementedError
 
     def create_node(self):
         loader = loading.get_plugin_loader('')
+        self.logger.log("Connecting to OpenStack provider")
         auth = loader.load_from_options(
             auth_url="http://identity.api.vscaler.com:5000",
             username="bmcc",
@@ -206,7 +207,7 @@ class Migrate:
         sesh = session.Session(auth=auth)
 
         glance = Client('2', session=sesh)
-
+        self.logger.log("Begin creation of migrated image")
         image = glance.images.create(name="myNewMigImage")
         glance.images.upload(image.id, open('~/test-migration/disk0.img', 'rb'))
 
