@@ -25,7 +25,8 @@ def run_test():
             print("test-migration folder is already created.")
 
         for i in range(volumes):
-            mig.pull_image(s3, "/tmp/disk{}.img".format(i), "~/test-migration/")
+            mig.pull_image(s3, "disk{}.img".format(i), "~/test-migration/")
+            mig.create_node()
 
     except Exception as e:
         print(e)

@@ -1,8 +1,6 @@
 from os import path, remove
-import logging
 import logging.config
 import json
-import sys
 
 from .Migrate import Migrate
 

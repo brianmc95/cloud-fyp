@@ -9,10 +9,12 @@ from libcloud.storage.types import InvalidContainerNameError
 import random
 import string
 import paramiko
-from glanceclient import Client
 import logging
 import time
 from libcloud.common.exceptions import  BaseHTTPError
+from keystoneauth1 import loading
+from keystoneauth1 import session
+from glanceclient import Client
 
 
 class Migrate:
@@ -158,7 +160,7 @@ class Migrate:
         # Copy each volume to the s3
         vol_count = 0
         for vol in self.__migration_vols:
-            cmd = "aws s3 cp /tmp/disk{}.img s3://{}/".format(vol_count, bucket_name)
+            cmd = "aws s3 cp /tmp/disk{}/disk{}.img s3://{}/".format(vol_count, vol_count, bucket_name)
             self.logger.info("AWS command to copy to S3: {}".format(cmd))
             self.ssh.exec_command(cmd)
             self.logger.info(stdout.readlines())
@@ -195,4 +197,16 @@ class Migrate:
         raise NotImplementedError
 
     def create_node(self):
-        print("Glance part")
+        loader = loading.get_plugin_loader('')
+        auth = loader.load_from_options(
+            auth_url="http://identity.api.vscaler.com:5000",
+            username="bmcc",
+            password="50@3Qljye5K2AfF",
+            project_id="a3484539c4a7435484eff9bb97e2f404")
+        sesh = session.Session(auth=auth)
+
+        glance = Client('2', session=sesh)
+
+        image = glance.images.create(name="myNewMigImage")
+        glance.images.upload(image.id, open('~/test-migration/disk0.img', 'rb'))
+
