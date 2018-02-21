@@ -189,12 +189,13 @@ class Migrate:
         """
         # Download the image file
         self.logger.info("Pulling {} from {} to {}".format(file_name, container, dest))
-        success = self.aws_prov.download_from_container(container, file_name, dest)
+        obj = self.aws_prov.get_object(container, file_name)
+        success = self.aws_prov.download_object_stream(obj)
         self.logger.info("Image file downloaded with code: {}".format(success))
         return success
 
-    def create_image(self, image_file_loc):
-        raise NotImplementedError
+    # def create_image(self, image_file_loc):
+    #     raise NotImplementedError
 
     def create_node(self):
         loader = loading.get_plugin_loader('')

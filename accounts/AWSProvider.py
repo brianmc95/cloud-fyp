@@ -75,6 +75,12 @@ class AWSProvider(Account):
     def get_container(self, container_name):
         return self.storage_driver.get_container(container_name)
 
+    def get_object(self, container_name, object_name):
+        return self.storage_driver.get_object(container_name, object_name)
+
+    def download_object_stream(self, obj):
+        return self.storage_driver.download_object_as_stream(obj)
+
     def list_availability_zones(self):
         return self.node_driver.ex_list_availability_zones()
 
