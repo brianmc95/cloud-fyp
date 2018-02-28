@@ -189,7 +189,7 @@ class Migrate:
         """
         # Download the image file
         self.logger.info("Pulling {} from {} to {}".format(file_name, container, dest))
-        obj = self.aws_prov.get_object(container, file_name)
+        obj = self.aws_prov.get_object(container.name, file_name)
         success = self.aws_prov.download_object_stream(obj)
         self.logger.info("Image file downloaded with code: {}".format(success))
         return success
@@ -198,17 +198,17 @@ class Migrate:
     #     raise NotImplementedError
 
     def create_node(self):
-        loader = loading.get_plugin_loader('')
-        self.logger.log("Connecting to OpenStack provider")
+        loader = loading.get_plugin_loader('password')
+        self.logger.info("Connecting to OpenStack provider")
         auth = loader.load_from_options(
             auth_url="http://identity.api.vscaler.com:5000",
             username="bmcc",
-            password="50@3Qljye5K2AfF",
-            project_id="a3484539c4a7435484eff9bb97e2f404")
+            password="50@3Qljye5K2AfF")
+        self.logger.debug("Auth setup successfully")
         sesh = session.Session(auth=auth)
 
         glance = Client('2', session=sesh)
-        self.logger.log("Begin creation of migrated image")
+        self.logger.info("Begin creation of migrated image")
         image = glance.images.create(name="myNewMigImage")
-        glance.images.upload(image.id, open('~/test-migration/disk0.img', 'rb'))
+        glance.images.upload(image.id, open('~/test-migration/disk0.qcow2', 'rb'))
 
