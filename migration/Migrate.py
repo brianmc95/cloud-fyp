@@ -11,7 +11,7 @@ import string
 import paramiko
 import logging
 import time
-from libcloud.common.exceptions import  BaseHTTPError
+from libcloud.common.exceptions import BaseHTTPError
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from glanceclient import Client
@@ -204,7 +204,7 @@ class Migrate:
             auth_url="http://identity.api.vscaler.com:5000",
             username="bmcc",
             password="50@3Qljye5K2AfF",
-            project="a3484539c4a7435484eff9bb97e2f404")
+            project_id="a3484539c4a7435484eff9bb97e2f404")
         self.logger.debug("Auth setup successfully")
         sesh = session.Session(auth=auth)
 
