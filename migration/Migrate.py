@@ -194,10 +194,7 @@ class Migrate:
         self.logger.info("Image file downloaded with code: {}".format(success))
         return success
 
-    # def create_image(self, image_file_loc):
-    #     raise NotImplementedError
-
-    def create_node(self):
+    def create_image(self):
         loader = loading.get_plugin_loader('password')
         self.logger.info("Connecting to OpenStack provider")
         auth = loader.load_from_options(
@@ -207,9 +204,9 @@ class Migrate:
             project_id="a3484539c4a7435484eff9bb97e2f404")
         self.logger.debug("Auth setup successfully")
         sesh = session.Session(auth=auth)
-
         glance = Client('2', session=sesh)
         self.logger.info("Begin creation of migrated image")
-        image = glance.images.create(name="myNewMigImage")
-        glance.images.upload(image.id, open('~/test-migration/disk0.qcow2', 'rb'))
+        image = glance.images.create(name="myNewMigImage", container_format="bare",
+                                     disk_format="raw", visibility="protected")
+        glance.images.upload(image.id, open('/home/ubuntu/test-migration/disk0.img', 'rb'))
 

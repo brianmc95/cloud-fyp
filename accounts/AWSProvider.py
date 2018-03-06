@@ -8,8 +8,8 @@ from accounts.Account import Account
 
 class AWSProvider(Account):
 
-    def __init__(self, region="eu-west-1", access_id_loc="/Users/BrianMcCarthy/amazonKeys/accessID",
-                 access_key_loc="/Users/BrianMcCarthy/amazonKeys/sak2"):
+    def __init__(self, region="eu-west-1", access_id_loc="/home/ubuntu/keys/accessID",
+                 access_key_loc="/home/ubuntu/keys/sak2"):
         super().__init__()
 
         self.__access_id, self.__access_key = self.__read_in_access_keys(access_id_loc, access_key_loc)
