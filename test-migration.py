@@ -11,23 +11,21 @@ def run_test():
 
         aws_provider = AWSProvider()
         migration_node = aws_provider.get_node("test-migration")
-        node_key_loc = "/home/ubuntu/keys/firstTestInstance.pem"
+        node_key_loc = "/Users/BrianMcCarthy/amazonKeys/firstTestInstance.pem"
 
         mig = Migrate(migration_node, True, node_key_loc)
-        #s3 = mig.deploy_S3()
-        #mig.connect_to_node()
-        #mig.copy_image_local()
-        #volumes = mig.transfer_image_to_s3(s3)
-    #
+        s3 = mig.deploy_S3()
+        mig.connect_to_node()
+        mig.copy_image_local()
+        volumes = mig.transfer_image_to_s3(s3)
         try:
-            os.mkdir("/home/ubuntu/test-migration")
+            os.mkdir("/Users/BrianMcCarthy/Documents/test-migration")
         except FileExistsError:
             print("test-migration folder is already created.")
-    #
-    #   for i in range(volumes):
-        #mig.pull_image(s3, "disk{}.img".format(i), "~/test-migration/")
-        mig.create_node()
-    #
+
+        mig.pull_image(s3, "disk0.img", "~/test-migration/")
+        mig.create_image()
+
     except Exception as e:
          print(e)
     #     # Destroy the node and associated volumes

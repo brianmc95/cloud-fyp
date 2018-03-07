@@ -8,7 +8,7 @@ class OpenStackProvider(Account):
 
     def __init__(self):
         super().__init__()
-        passFile = open("/home/ubuntu/keys/pass")
+        passFile = open("/Users/BrianMcCarthy/vscalerKeys/pass")
         password = passFile.read().strip()
 
         OpenStack = get_driver(Provider.OPENSTACK)
