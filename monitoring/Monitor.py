@@ -17,12 +17,6 @@ import time
 PREVIOUS_NET_USAGE = None
 
 
-def start_record(IP, port, ID, name):
-    while True:
-        report = gen_report(ID, name)
-        send_report(report, IP, port)
-        time.sleep(300)
-
 def gen_report(instance_id, instance_name):
     # Get all our usage information and generate a report based on this.
 
@@ -89,7 +83,8 @@ def main():
 
     args = parser.parse_args()
 
-    start_record(args.ip, args.port, args.id, args.name)
+    report = gen_report(args.id, args.name)
+    send_report(report, args.ip, args.port)
 
 
 if __name__ == "__main__":

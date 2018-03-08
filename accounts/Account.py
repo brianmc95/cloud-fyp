@@ -10,9 +10,14 @@
 
 
 from libcloud.compute.base import NodeDriver
+from pymongo import MongoClient
+import random
+import string
 
 
 class Account:
+
+    client = MongoClient('localhost', 27017)
 
     def __init__(self):
         self.driver = NodeDriver(key="SimpleBase")
@@ -75,3 +80,22 @@ class Account:
             if sec.id in sec_ids:
                 sec_groups.append(sec)
         return sec_groups
+
+    def gen_id(self):
+        attempt = 0
+        inUse = 0
+        while True:
+            rand_id = "".join(random.choices(string.ascii_letters + string.digits, k=32))
+            db = self.client["cloud-fyp"]
+            collection = db["instances"]
+            inUse = self.client.db.collection.count({'INSTANCE_ID': rand_id})
+            attempt += 1
+            if inUse < 0:
+                break
+            if attempt > 3:
+                # TODO: Do something to deal with this.
+                print("Failed to generate a random ID")
+                break
+        return rand_id
+
+

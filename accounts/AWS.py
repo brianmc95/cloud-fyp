@@ -1,7 +1,9 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
+from libcloud.compute.deployment import MultiStepDeployment, ScriptDeployment
 
 from accounts.Account import Account
+import json
 
 
 class AWS(Account):
@@ -51,6 +53,28 @@ class AWS(Account):
                                 image=image,
                                 subnet=networks,
                                 security_groups=security_groups)
+
+    def deploy_node_script(self, name, size, image, networks, security_groups, mon, script=None):
+        steps = []
+        if mon:
+            config_file = open("config/manager-config.json")
+            config_json = json.load(config_file)
+            node_id = self.gen_id()
+            ip = config_json["ip"]
+            port = config_json["port"]
+            mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
+            steps.append(ScriptDeployment(self.__linux_mon, args=mon_args))
+        if script:
+            steps.append(ScriptDeployment(script))
+
+        msd = MultiStepDeployment(steps)
+
+        node = self.driver.deploy_node(name=name,
+                                       size=size,
+                                       image=image,
+                                       networks=networks,
+                                       security_groups=security_groups,
+                                       deploy=msd)
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:
