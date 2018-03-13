@@ -179,21 +179,6 @@ class Migrate:
             vol_count += 1
         return vol_count
 
-    def pull_image(self, container, file_name, dest):
-        """
-        Dowload the image file to be turned into a node
-        :param container: container to pull the disk from.
-        :param file_name: file to be pulled i.e. the image file.
-        :param dest: Location where image file should be placed.
-        :return: None
-        """
-        # Download the image file
-        self.logger.info("Pulling {} from {} to {}".format(file_name, container, dest))
-        obj = self.aws_prov.get_object(container.name, file_name)
-        success = self.aws_prov.download_object_stream(obj)
-        self.logger.info("Image file downloaded with code: {}".format(success))
-        return success
-
     def create_image(self):
         loader = loading.get_plugin_loader('password')
         self.logger.info("Connecting to OpenStack provider")
@@ -204,9 +189,8 @@ class Migrate:
             project_id="a3484539c4a7435484eff9bb97e2f404")
         self.logger.debug("Auth setup successfully")
         sesh = session.Session(auth=auth)
-        glance = Client('2', session=sesh)
+        glance = Client('1', session=sesh)
         self.logger.info("Begin creation of migrated image")
-        image = glance.images.create(name="myNewMigImage", container_format="bare",
-                                     disk_format="raw", visibility="protected")
-        glance.images.upload(image.id, open('/home/ubuntu/test-migration/disk0.img', 'rb'))
-
+        image = glance.images.create(name="myNewMigImage", container_format="bare", disk_format="raw")
+        glance.images.update(image, copy_from="https://s3-eu-west-1.amazonaws.com/brian-mc-carthy-fyp-test/disk0.img")
+        self.logger.info(image)

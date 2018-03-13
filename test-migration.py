@@ -5,8 +5,11 @@ from accounts.AWSProvider import AWSProvider
 import os
 
 
-def run_test():
+# TODO: The key needs to be set
+# TODO: Change to allow the openStack to aws
+# TODO: Make it a bit more generic
 
+def run_test():
     try:
 
         aws_provider = AWSProvider()
@@ -22,22 +25,20 @@ def run_test():
             os.mkdir("/Users/BrianMcCarthy/Documents/test-migration")
         except FileExistsError:
             print("test-migration folder is already created.")
-
-        mig.pull_image(s3, "disk0.img", "~/test-migration/")
         mig.create_image()
 
     except Exception as e:
-         print(e)
-    #     # Destroy the node and associated volumes
-    #     aws_provider.destroy_node(migration_node)
-    #
-    #     # Recreate Node
-    #     mig_image = aws_provider.get_image("ami-4b671032")
-    #     mig_size = aws_provider.get_size("t2.micro")
-    #     mig_sec = aws_provider.get_security_groups("launch-wizard-1")
-    #     mig_net = aws_provider.get_networks("subnet-82cb7ed9")
-    #     mig_key = aws_provider.list_key_pairs()[0]
-    #     migration_node = aws_provider.create_node("test-migration", mig_size, mig_image, mig_net, mig_sec, mig_key.name)
+        print(e)
+        # Destroy the node and associated volumes
+        aws_provider.destroy_node(migration_node)
+
+        # Recreate Node
+        mig_image = aws_provider.get_image("ami-4b671032")
+        mig_size = aws_provider.get_size("t2.micro")
+        mig_sec = aws_provider.get_security_groups("launch-wizard-1")
+        mig_net = aws_provider.get_networks("subnet-82cb7ed9")
+        mig_key = aws_provider.list_key_pairs()[0]
+        migration_node = aws_provider.create_node("test-migration", mig_size, mig_image, mig_net, mig_sec, mig_key.name)
 
 
 if __name__ == "__main__":
