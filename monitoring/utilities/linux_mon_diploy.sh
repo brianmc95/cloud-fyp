@@ -32,6 +32,7 @@ done
 echo IP OF MANAGER        = "${IP}"
 echo PORT OPEN ON MANAGER = "${PORT}"
 echo NAME OF INSTANCE     = "${NAME}"
+echo ID OF MACHINE        = "${IP}"
 
 git clone https://github.com/brianmc95/cloud-fyp.git
 
@@ -39,10 +40,6 @@ mkdir monitor
 
 cwd=$(pwd)
 MACHINE_ID=$(cat) /etc/machine-id
-
-if [ -z "$MACHINE_ID" ]
-then
-    MACHINE_ID =
 
 cp ${cwd}/cloud-fyp/monitoring/Monitor.py ${cwd}/monitor/
 
