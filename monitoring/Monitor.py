@@ -17,7 +17,7 @@ import time
 PREVIOUS_NET_USAGE = None
 
 
-def gen_report(instance_id, instance_name):
+def gen_report(instance_id, instance_name, provider):
     # Get all our usage information and generate a report based on this.
 
     global PREVIOUS_NET_USAGE
@@ -36,7 +36,8 @@ def gen_report(instance_id, instance_name):
                             "BYTES_SENT": None,
                             "PACKETS_SENT": None,
                             "PACKETS_RECV": None,
-                            "CONNECTIONS": None}
+                            "CONNECTIONS": None},
+              "PROVIDER": provider
               }
 
     memory_usage = psutil.virtual_memory()
@@ -80,10 +81,11 @@ def main():
     parser.add_argument("--port", "-p", help="port the server is hosted on")
     parser.add_argument("--id", help="id of the instance which is sending the monitoring information")
     parser.add_argument("--name", "-n", help="name of the instance which is sending monitoring information")
+    parser.add_argument("--provider", "-pv", help="The provider this instance is running on.")
 
     args = parser.parse_args()
 
-    report = gen_report(args.id, args.name)
+    report = gen_report(args.id, args.name, args.provider)
     send_report(report, args.ip, args.port)
 
 

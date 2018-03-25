@@ -9,15 +9,14 @@ import threading
 import argparse
 import re
 import json
-from pymongo import MongoClient
-
+from server.DataManager import DataManager
 # TODO: Add some exception handling for parsing json so we don't have constant errors.
 # TODO: Add some logging to this so it doesn't just sit and do stuff without people knowing
 
 
 class HTTPRequestHandler(BaseHTTPRequestHandler):
 
-    client = MongoClient('localhost', 27017)
+    dm = DataManager()
 
     def do_POST(self):
         if re.search("/addrecord/", self.path) is not None:
@@ -26,16 +25,15 @@ class HTTPRequestHandler(BaseHTTPRequestHandler):
                 length = int(self.headers["content-length"])
                 post_body = self.rfile.read(length).decode("utf-8", "ignore")
 
-                self.send_response(200)
-                self.end_headers()
+                result = self.dm.add_record(post_body)
 
-                # Convert to dict
-                instance_info = json.loads(post_body)
-
-                # Put data into mongoDB
-                db = self.client["cloud-fyp"]
-                instances = db["instances"]
-                post_id = instances.insert_one(instance_info).inserted_id
+                if result:
+                    self.send_response(200)
+                    self.end_headers()
+                else:
+                    self.send_response(403)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
         else:
             self.send_response(403)
             self.send_header("Content-Type", "application/json")

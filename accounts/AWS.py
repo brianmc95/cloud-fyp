@@ -76,6 +76,8 @@ class AWS(Account):
                                        security_groups=security_groups,
                                        deploy=msd)
 
+        # TODO: Log the instance info and it's randomly given id and actual id
+
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:
             locations = self.driver.list_locations()

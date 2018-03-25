@@ -6,11 +6,11 @@ from dashboard.dashServer import app
 from accounts.AWS import AWS
 from accounts.OpenStack import OpenStackProvider
 
-
 aws = AWS()
 vscaler = OpenStackProvider()
 
 providers = {"Amazon Web Services": aws, "Vscaler": vscaler}
+
 
 layout = html.Div([
     html.Label("Provider"),

@@ -35,6 +35,9 @@ class OpenStackProvider(Account):
                                 networks=networks,
                                 security_groups=security_groups)
 
+    def get_node_info(self, node_id):
+        return self.driver.ex_get_node_details(node_id)
+
     def deploy_node_script(self, name, size, image, networks, security_groups, mon, script=None):
         steps = []
         if mon:
@@ -56,3 +59,5 @@ class OpenStackProvider(Account):
                                        networks=networks,
                                        security_groups=security_groups,
                                        deploy=msd)
+
+        # TODO: log the id of the instance and it's other information
