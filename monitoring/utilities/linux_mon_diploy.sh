@@ -21,8 +21,8 @@ case $key in
     shift # past argument
     shift # past value
     ;;
-    -n|--name)
-    NAME="$2"
+    -pv|--provider)
+    PROVIDER="$2"
     shift # past argument
     shift # past value
     ;;
@@ -31,20 +31,20 @@ done
 
 echo IP OF MANAGER        = "${IP}"
 echo PORT OPEN ON MANAGER = "${PORT}"
-echo NAME OF INSTANCE     = "${NAME}"
 echo ID OF MACHINE        = "${IP}"
+echo PROVIDER             = "${PROVIDER}"
 
 git clone https://github.com/brianmc95/cloud-fyp.git
 
 mkdir monitor
+touch monitor/prev_report.json
 
 cwd=$(pwd)
-MACHINE_ID=$(cat) /etc/machine-id
 
 cp ${cwd}/cloud-fyp/monitoring/Monitor.py ${cwd}/monitor/
 
 rm -rf cloud-fyp
 
-echo "*/5 * * * * python3 ${cwd}/monitor/Monitor.py --ip ${IP} -p ${PORT} --id ${ID} -n ${NAME}" > mon_cron_job
+echo "*/5 * * * * python3 ${cwd}/monitor/Monitor.py --ip ${IP} -p ${PORT} --id ${ID} --provider ${PROVIDER}" > monitor/mon_cron_job
 
 crontab mon_cron_job

@@ -16,9 +16,12 @@ class DataManager:
     def add_record(self, post_body):
         # Convert to dict
         instance_info = json.loads(post_body)
+        disk_info = instance_info["DISK_USAGE"]
+        del instance_info["DISK_USAGE"]
         # Put data into mongoDB
-        post_id = self.inst_use.insert_one(instance_info).inserted_id
-        return post_id
+        instance_post_id = self.inst_use.insert_one(instance_info).inserted_id
+        vol_post_id = self.vols.insert_one(disk_info).inserted_id
+        return instance_post_id
 
     def get_current_data(self, CLI):
         datetime.datetime.today()

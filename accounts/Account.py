@@ -67,6 +67,11 @@ class Account:
     def get_size(self, size_id):
         return [s for s in self.driver.list_sizes() if s.id == size_id][0]
 
+    def get_volume(self, vol_id):
+        for vol in self.list_volumes():
+            if vol.id == vol_id:
+                return vol
+
     def get_networks(self, net_ids):
         networks = []
         for net in self.list_networks():

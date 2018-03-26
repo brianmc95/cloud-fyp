@@ -8,7 +8,7 @@ from socketserver import ThreadingMixIn
 import threading
 import argparse
 import re
-from server.DataManager import DataManager
+from DataManager import DataManager
 # TODO: Add some exception handling for parsing json so we don't have constant errors.
 # TODO: Add some logging to this so it doesn't just sit and do stuff without people knowing
 

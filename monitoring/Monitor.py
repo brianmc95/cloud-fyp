@@ -1,4 +1,4 @@
-#!/usr/bin/python3.6
+#!/usr/bin/python3
 
 """
     Brian McCarthy 114302146
@@ -13,55 +13,69 @@ import argparse
 from datetime import datetime
 import requests
 import time
+import json
 
-PREVIOUS_NET_USAGE = None
+def get_prev_report():
+    prev_report = None
+    try:
+        prev_report = json.load(open("monitor/prev_report.json"))
+    except (json.decoder.JSONDecodeError, FileNotFoundError) as e:
+        print(e)
+    return prev_report
 
+def write_prev_net(report):
+    with open('monitor/prev_report.json', 'w') as fp:
+        json.dump(report, fp)
 
-def gen_report(instance_id, instance_name, provider):
+def gen_report(assigned_id, provider, previous_report):
     # Get all our usage information and generate a report based on this.
-
-    global PREVIOUS_NET_USAGE
 
     today = datetime.now()
     now = today.strftime("%Y-%m-%d %H:%M:%S")
 
-    report = {"INSTANCE_ID": instance_id,
-              "INSTANCE_NAME": instance_name,
-              "DATE_TIME": now,
-              "CPU_USAGE": psutil.cpu_percent(interval=5),
-              "MEM_USAGE": {"TOTAL": None,
-                            "AVAIL": None},
-              "DISK_USAGE": {},
-              "NET_USAGE": {"BYTES_RECV": None,
-                            "BYTES_SENT": None,
-                            "PACKETS_SENT": None,
-                            "PACKETS_RECV": None,
-                            "CONNECTIONS": None},
-              "PROVIDER": provider
-              }
-
     memory_usage = psutil.virtual_memory()
-    report["MEM_USAGE"]["TOTAL"] = memory_usage.total
-    report["MEM_USAGE"]["AVAIL"] = memory_usage.available
+    report = {"ASSIGNED_ID" : assigned_id,
+              "DATE_TIME"   : now,
+              "CPU_USAGE"   : psutil.cpu_percent(interval=5),
+              "MEM_TOTAL"   : memory_usage.total,
+              "MEM__AVAIL"  : memory_usage.available,
+              "DISK_USAGE"  : {},
+              "CONNECTIONS" : None,
+              "PACKETS_RECV": None,
+              "PACKETS_SENT": None,
+              "BYTES_SENT"  : None,
+              "BYTES_RECV"  : None,
+              "PROVIDER"    : provider
+              }
 
     for disk in psutil.disk_partitions(all=False):
         disk_usage = psutil.disk_usage(disk.mountpoint)
-        report["DISK_USAGE"][disk.device] = {"TOTAL": disk_usage.total, "FREE": disk_usage.free}
+        report["DISK_USAGE"][disk.device] = {"INSTANCE_ASSIGNED_ID": assigned_id,
+                                             "DATETIME": now,
+                                             "PROVIDER": provider,
+                                             "TOTAL": disk_usage.total,
+                                             "FREE": disk_usage.free}
 
     network_usage = psutil.net_io_counters()
     connections = len(psutil.net_connections())
 
-    if PREVIOUS_NET_USAGE is None:
-        PREVIOUS_NET_USAGE = network_usage
+    if previous_report is None:
+        previous_report = report
+        previous_report["BYTES_RECV"] = network_usage.bytes_recv
+        previous_report["BYTES_SENT"] = network_usage.bytes_sent
+        previous_report["PACKETS_SENT"] = network_usage.packets_sent
+        previous_report["PACKETS_RECV"] = network_usage.packets_recv
         time.sleep(60)
 
-    report["NET_USAGE"]["BYTES_RECV"] = network_usage.bytes_recv - PREVIOUS_NET_USAGE.bytes_recv
-    report["NET_USAGE"]["BYTES_SENT"] = network_usage.bytes_sent - PREVIOUS_NET_USAGE.bytes_sent
-    report["NET_USAGE"]["PACKETS_SENT"] = network_usage.packets_sent - PREVIOUS_NET_USAGE.packets_sent
-    report["NET_USAGE"]["PACKETS_RECV"] = network_usage.packets_recv - PREVIOUS_NET_USAGE.packets_recv
+    network_usage = psutil.net_io_counters()
+    report["BYTES_RECV"] = network_usage.bytes_recv - previous_report["BYTES_RECV"]
+    report["BYTES_SENT"] = network_usage.bytes_sent - previous_report["BYTES_SENT"]
+    report["PACKETS_SENT"] = network_usage.packets_sent - previous_report["PACKETS_SENT"]
+    report["PACKETS_RECV"] = network_usage.packets_recv - previous_report["PACKETS_RECV"]
 
-    PREVIOUS_NET_USAGE = network_usage
-    report["NET_USAGE"]["CONNECTIONS"] = connections
+    report["CONNECTIONS"] = connections
+
+    write_prev_net(report)
 
     return report
 
@@ -80,12 +94,12 @@ def main():
     parser.add_argument("--ip", help="IP Address of the central server in the system that records the usages")
     parser.add_argument("--port", "-p", help="port the server is hosted on")
     parser.add_argument("--id", help="id of the instance which is sending the monitoring information")
-    parser.add_argument("--name", "-n", help="name of the instance which is sending monitoring information")
     parser.add_argument("--provider", "-pv", help="The provider this instance is running on.")
 
     args = parser.parse_args()
 
-    report = gen_report(args.id, args.name, args.provider)
+    previous_report = get_prev_report()
+    report = gen_report(args.id, args.provider, previous_report)
     send_report(report, args.ip, args.port)
 
 
