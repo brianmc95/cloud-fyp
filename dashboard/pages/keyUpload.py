@@ -97,6 +97,4 @@ def delete_key(n_clicks, table_rows, selected_row_indices):
         result = dm.delete_key(key_dict["Key File"], "aws")
         if result:
             return html.Div([html.H2("Key: {} was deleted".format(key_dict["Key File"]))])
-        else:
-            return html.Div([html.H2("ERROR: Key: {} was not deleted".format(key_dict["Key File"]))])
-
+        return html.Div([html.H2("ERROR: Key: {} was not deleted".format(key_dict["Key File"]))])
