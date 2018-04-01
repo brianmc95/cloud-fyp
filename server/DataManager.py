@@ -1,8 +1,9 @@
 from pymongo import MongoClient
+import pymongo.errors
 import json
 import pandas as pd
 import datetime
-
+import os
 
 class DataManager:
 
@@ -12,16 +13,107 @@ class DataManager:
         self.inst_info = self.db["instances"]
         self.inst_use = self.db["instance_usages"]
         self.vols = self.db["volumes"]
+        self.accounts = self.db["accounts"]
+        self.__root_path = self.__get_root_path()
+        self.__keys_dir = "keys"
+
+    def __get_root_path(self):
+        full_path = os.getcwd()
+        root_path = ""
+        for directory in full_path.split('/'):
+            if directory == "cloud-fyp":
+                root_path += directory
+                return root_path
+            root_path += "{}/".format(directory)
+
+
+    def add_account(self, account):
+        try:
+            insert_id = self.accounts.insert_one(account).inserted_id
+            if insert_id:
+                return True
+            return False
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            print(e)
+            return False
+
+    def get_accounts(self, provider=None):
+        try:
+            if provider:
+                accounts = []
+                for document in self.accounts.find({"PROVIDER": provider}, {'_id': False}):
+                    accounts.append(document)
+                return accounts
+            else:
+                return list(self.accounts.find({}, {'_id': False}))
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            print(e)
+            return False
+
+    def set_account(self, account_name, provider):
+        try:
+            result_unset = self.accounts.update_one({"PROVIDER": provider, "SET_ACCOUNT": True}, {"$set": {"SET_ACCOUNT": False}})
+            result_set = self.accounts.update_one({"ACCOUNT_NAME": account_name, "PROVIDER": provider}, {"$set": {"SET_ACCOUNT": True}})
+            if result_set.modified_count > 0 and (result_unset.matched_count > 0 and result_unset.modified_count > 0) or result_unset.matched_count == 0:
+                return True
+            return False
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            print(e)
+            return False
+
+    def get_set_account(self, provider):
+        try:
+            set_account = self.accounts.find_one({"PROVIDER": provider, "SET_ACCOUNT": True})
+            return set_account
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            print(e)
+            return False
+
+    def delete_account(self, account_name, provider):
+        try:
+            delete_account = self.accounts.delete_one({"PROVIDER": provider, "ACCOUNT_NAME": account_name})
+            if delete_account.deleted_count > 0:
+                return True
+            return False
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            print(e)
+            return False
+
+    def add_key(self, filecontent, filename, provider):
+        try:
+            with open("{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, provider, filename), "wb") as keyfile:
+                keyfile.write(filecontent)
+        except Exception as e:
+            print(e)
+            return False
+        return True
+
+    def get_keys(self, provider):
+        if provider == "aws" or provider == "openstack":
+            return os.listdir("{}/{}/{}/".format(self.__root_path, self.__keys_dir, provider))
+        return []
+
+    def delete_key(self, key_name, provider):
+        try:
+            if provider == "aws" or provider == "openstack":
+                os.remove("{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, provider, key_name))
+                return True
+        except OSError as e:
+            print(e)
+            return False
 
     def add_record(self, post_body):
-        # Convert to dict
-        instance_info = json.loads(post_body)
-        disk_info = instance_info["DISK_USAGE"]
-        del instance_info["DISK_USAGE"]
-        # Put data into mongoDB
-        instance_post_id = self.inst_use.insert_one(instance_info).inserted_id
-        vol_post_id = self.vols.insert_one(disk_info).inserted_id
-        return instance_post_id
+        try:
+            # Convert to dict
+            instance_info = json.loads(post_body)
+            disk_info = instance_info["DISK_USAGE"]
+            del instance_info["DISK_USAGE"]
+            # Put data into mongoDB
+            instance_post_id = self.inst_use.insert_one(instance_info).inserted_id
+            vol_post_id = self.vols.insert_one(disk_info).inserted_id
+            return instance_post_id
+        except pymongo.errors.ServerSelectionTimeoutError as e:
+            return False
 
     def get_current_data(self, CLI):
         datetime.datetime.today()
