@@ -8,8 +8,6 @@ import json
 
 class OpenStack(Account):
 
-    __linux_mon = "linux_mon_diploy.sh"
-
     def __init__(self, access_name, password, auth_url, auth_version, tenant_name, glance_version):
         super().__init__()
         OpenStack = get_driver(Provider.OPENSTACK)
@@ -17,7 +15,8 @@ class OpenStack(Account):
                                 ex_force_auth_url=auth_url,
                                 ex_force_auth_version=auth_version,
                                 ex_tenant_name=tenant_name)
-        #TODO deal with glance version
+
+        #TODO: deal with glance version Migration service.
 
     def list_networks(self):
         return self.driver.ex_list_networks()
@@ -58,4 +57,5 @@ class OpenStack(Account):
                                        security_groups=security_groups,
                                        deploy=msd)
 
-        # TODO: log the id of the instance and it's other information
+        if mon:
+            self.log_node(node, node_id, name, size, image, "OPENSTACK")

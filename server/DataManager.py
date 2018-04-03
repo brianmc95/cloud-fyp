@@ -26,6 +26,9 @@ class DataManager:
                                    open_account["ACCOUNT_AUTH_URL"], open_account["ACCOUNT_AUTH_VERSION"],
                                    open_account["ACCOUNT_TENANT_NAME"], open_account["ACCOUNT_IMAGE_VERSION"])
 
+    def get_drivers(self):
+        return self.aws_prov, self.open_prov
+
     def __get_root_path(self):
         full_path = os.getcwd()
         root_path = ""
@@ -126,7 +129,7 @@ class DataManager:
             return False
 
     def deploy(self, data):
-        # TODO: Implement on deployment branch more to do there not necessarily part of this branch for now
+
         return True
 
     def deploy_options(self, data):

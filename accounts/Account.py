@@ -11,16 +11,31 @@
 
 from libcloud.compute.base import NodeDriver
 from pymongo import MongoClient
+import pymongo.errors
 import random
 import string
+import datetime
+import os
 
 
 class Account:
 
-    client = MongoClient('localhost', 27017)
-
     def __init__(self):
         self.driver = NodeDriver(key="SimpleBase")
+        self.client = MongoClient('localhost', 27017)
+        self.db = self.client["cloud-fyp"]
+        self.inst_info = self.db["instances"]
+        self.vols = self.db["volumes"]
+        self.__linux_mon = "{}/monitoring/utilities/linux_mon_diploy.sh".format(self.__get_root_path())
+
+    def __get_root_path(self):
+        full_path = os.getcwd()
+        root_path = ""
+        for directory in full_path.split('/'):
+            if directory == "cloud-fyp":
+                root_path += directory
+                return root_path
+            root_path += "{}/".format(directory)
 
     def list_images(self):
         return self.driver.list_images()
@@ -93,14 +108,27 @@ class Account:
             rand_id = "".join(random.choices(string.ascii_letters + string.digits, k=32))
             db = self.client["cloud-fyp"]
             collection = db["instances"]
-            inUse = self.client.db.collection.count({'INSTANCE_ID': rand_id})
+            inUse = collection.count({'ASSIGNED_ID': rand_id})
             attempt += 1
-            if inUse < 0:
+            if inUse == 0:
                 break
             if attempt > 3:
-                # TODO: Do something to deal with this.
                 print("Failed to generate a random ID")
-                break
+                return False
         return rand_id
 
-
+    def log_node(self, node, assigned_id, name, size, image, provider):
+        post = {
+            "INSTANCE_ID": node.id,
+            "ASSIGNED_ID": assigned_id,
+            "INSTANCE_NAME": name,
+            "SIZE": size.name,
+            "IMAGE": image.name,
+            "PROVIDER": provider,
+            "CREATION": datetime.datetime.now()
+        }
+        try:
+            self.inst_info.insert_one(post)
+        except pymongo.errors.PyMongoError as e:
+            print(e)
+            print("Issue when posting node info")

@@ -3,12 +3,13 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 from dashboard.dashServer import app
+from server.DataManager import DataManager
 
-aws = ""
-vscaler = ""
+dm = DataManager()
 
-providers = {"Amazon Web Services": aws, "Vscaler": vscaler}
+aws_prov, open_prov = dm.get_drivers()
 
+providers = {"Amazon Web Services": aws_prov, "OpenStack": open_prov}
 
 layout = html.Div([
     html.Label("Provider"),
@@ -167,12 +168,11 @@ def launch_instance(n_clicks, provider, name, image_id, size_id, network_ids, se
     deploy_sec = providers[provider].get_security_groups(security_ids)
 
     vol = providers[provider].create_volume(name=volume_name, size=volume_size)
-    node = providers[provider].create_node(name=name,
-                                           size=deploy_size,
-                                           image=deploy_image,
-                                           networks=deploy_nets,
-                                           security_groups=deploy_sec)
+    node = providers[provider].deploy_node_script(name=name,
+                                                  size=deploy_size,
+                                                  image=deploy_image,
+                                                  networks=deploy_nets,
+                                                  security_groups=deploy_sec,
+                                                  mon=True)
 
     providers[provider].attach_volume(node, vol)
-
-# TODO: Update with changes to deployment.

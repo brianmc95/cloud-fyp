@@ -1,0 +1,7 @@
+cloudService.py
+cloudService.egg-info/PKG-INFO
+cloudService.egg-info/SOURCES.txt
+cloudService.egg-info/dependency_links.txt
+cloudService.egg-info/entry_points.txt
+cloudService.egg-info/requires.txt
+cloudService.egg-info/top_level.txt

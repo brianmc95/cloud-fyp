@@ -19,6 +19,8 @@ class AWS(Account):
                                    "ami-5fd95e26", "ami-e79e1e9e", "ami-811a9ef8", "ami-d71793ae", "ami-9a8b0ce3",
                                    "ami-b3cb4cca", "ami-2e832957", "ami-0659cd7f", "ami-974cdbee"]
 
+        self.__linux_mon = "linux_mon_diploy.sh"
+
     def list_images(self):
         images = []
         for imageID in self.__free_tier_images:
@@ -66,7 +68,8 @@ class AWS(Account):
                                        security_groups=security_groups,
                                        deploy=msd)
 
-        # TODO: Log the instance info and it's randomly given id and actual id
+        if mon:
+            self.log_node(node, node_id, name, size, image, "AWS")
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:
