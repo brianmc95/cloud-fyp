@@ -318,8 +318,9 @@ def aws_account(config, accountname, accountid, region, secretkey):
 @click.option("--tenantName", "-t", help="Tenant name associated with the account")
 @click.option("--glanceVersion", "-g", help="Version of glance image api for OpenStack used")
 @click.option("--password", "-pw", help="Password associated with the account")
+@click.option("--projectID", "-pi", help="ID of the project the account is associated with")
 @pass_config
-def openstack_account(config, accountname, accountid, authorizationurl, authorizationversion, tenantname, glanceversion, password):
+def openstack_account(config, accountname, accountid, authorizationurl, authorizationversion, tenantname, glanceversion, password, projectid):
     """
     Functionality to configure an OpenStack account
     """
@@ -331,6 +332,7 @@ def openstack_account(config, accountname, accountid, authorizationurl, authoriz
         "ACCOUNT_IMAGE_VERSION": glanceversion,
         "ACCOUNT_TENANT_NAME": tenantname,
         "ACCOUNT_PASSWORD": password,
+        "ACCOUNT_PROJECT_ID": projectid,
         "PROVIDER": "OPENSTACK",
         "SET_ACCOUNT": False
     }

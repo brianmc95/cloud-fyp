@@ -76,3 +76,25 @@ class AWS(Account):
             locations = self.driver.list_locations()
             location = [r for r in locations if r.availability_zone.region_name == self.region][0]
         self.driver.create_volume(name=name, size=size, location=location)
+
+    def create_container(self, container_name):
+        container = self.storage_driver.create_container(container_name)
+        return container
+
+    def get_container(self, container_name):
+        return self.storage_driver.get_container(container_name)
+
+    def get_object(self, container_name, object_name):
+        return self.storage_driver.get_object(container_name, object_name)
+
+    def download_object_stream(self, obj):
+        return self.storage_driver.download_object_as_stream(obj)
+
+    def list_availability_zones(self):
+        return self.node_driver.ex_list_availability_zones()
+
+    def get_availability_zone(self, zone_name):
+        for zone in self.node_driver.ex_list_availability_zones():
+            if zone.name == zone_name:
+                return zone
+

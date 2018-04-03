@@ -1,27 +1,28 @@
 """
-
     Brian McCarthy 114302146
 
     Class to represent an account for a user, this base class should not be instantiated, it's children will
     be used to define new access points to service providers. This also acts as an interface to the dashboard
     making it simpler by using this basic methods and not relying on having to implement them specifically.
-
 """
 
 
 from libcloud.compute.base import NodeDriver
+from libcloud.storage.base import StorageDriver
 from pymongo import MongoClient
 import pymongo.errors
-import random
 import string
 import datetime
 import os
+import random
+from retrying import retry
 
 
 class Account:
 
     def __init__(self):
-        self.driver = NodeDriver(key="SimpleBase")
+        self.node_driver = NodeDriver(key="SimpleBase")
+        self.storage_driver = StorageDriver(key="SimpleBase")
         self.client = MongoClient('localhost', 27017)
         self.db = self.client["cloud-fyp"]
         self.inst_info = self.db["instances"]
@@ -38,19 +39,19 @@ class Account:
             root_path += "{}/".format(directory)
 
     def list_images(self):
-        return self.driver.list_images()
+        return self.node_driver.list_images()
 
     def list_sizes(self):
-        return self.driver.list_sizes()
+        return self.node_driver.list_sizes()
 
     def list_key_pairs(self):
-        return self.driver.list_key_pairs()
+        return self.node_driver.list_key_pairs()
 
     def list_nodes(self):
-        return self.driver.list_nodes()
+        return self.node_driver.list_nodes()
 
     def list_volumes(self):
-        return self.driver.list_volumes()
+        return self.node_driver.list_volumes()
 
     def list_security_groups(self):
         raise NotImplementedError("This is not available in this interface")
@@ -59,33 +60,32 @@ class Account:
         raise NotImplementedError("This is not available in this interface")
 
     def create_volume(self, name, size, location=None, snapshot=None):
-        self.driver.create_volume(name=name, size=size, location=location, snapshot=snapshot)
+        volume = self.node_driver.create_volume(name=name, size=size, location=location, snapshot=snapshot)
+        return volume
 
-    def attach_volume(self, node, volume):
-        self.driver.attach_volume(node, volume)
+    @retry(stop_max_delay=20000, wait_fixed=2000)
+    def attach_volume(self, node, volume, device=None):
+        if device is None:
+            device = "/dev/sd" + "".join(random.choice("fghijklmnop"))
+        return self.node_driver.attach_volume(node, volume, device)
 
-    def dettach_volume(self, node, volume):
-        node.detach_volume(volume)
+    def detach_volume(self, volume):
+        return self.node_driver.detach_volume(volume)
 
     def destroy_volume(self, volume):
-        self.driver.destroy_volume(volume)
+        self.node_driver.destroy_volume(volume)
 
     def create_node(self, *kwargs):
         raise NotImplementedError("This is not available in this interface")
 
     def destroy_node(self, node):
-        self.destroy_node(node)
+        self.node_driver.destroy_node(node)
 
     def get_image(self, image_id):
-        return self.driver.get_image(image_id)
+        return self.node_driver.get_image(image_id)
 
     def get_size(self, size_id):
-        return [s for s in self.driver.list_sizes() if s.id == size_id][0]
-
-    def get_volume(self, vol_id):
-        for vol in self.list_volumes():
-            if vol.id == vol_id:
-                return vol
+        return [s for s in self.node_driver.list_sizes() if s.id == size_id][0]
 
     def get_networks(self, net_ids):
         networks = []
@@ -100,6 +100,32 @@ class Account:
             if sec.id in sec_ids:
                 sec_groups.append(sec)
         return sec_groups
+
+    def get_volume(self, vol_id):
+        for vol in self.list_volumes():
+            if vol.id == vol_id:
+                return vol
+
+    def create_container(self, container_name):
+        return self.storage_driver.create_container(container_name)
+
+    def upload_to_container(self, path, container, object_name):
+        self.storage_driver.upload_object(file_path=path, container=container, object_name=object_name)
+
+    def download_from_container(self, container, file_name, dest):
+        obj = self.storage_driver.get_object(container.name, object_name=file_name)
+        return obj.download(destination_path=dest)
+
+    def delete_object(self):
+        return NotImplementedError
+
+    def list_containers(self):
+        return self.storage_driver.list_containers()
+
+    def get_node(self, name=None, id=None):
+        for node in self.node_driver.list_nodes():
+            if (node.id == id or node.name == name) and node.state.lower() != "terminated":
+                return node
 
     def gen_id(self):
         attempt = 0
