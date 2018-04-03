@@ -46,6 +46,5 @@ def display_page(pathname):
     else:
         return errorLayout
 
-
-if __name__ == "__main__":
-    app.run_server(debug=True)
+def serve(debug=False):
+    app.run_server(debug=debug)

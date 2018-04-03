@@ -4,6 +4,9 @@ import json
 import pandas as pd
 import datetime
 import os
+from accounts.OpenStack import OpenStack
+from accounts.AWS import AWS
+
 
 class DataManager:
 
@@ -16,6 +19,12 @@ class DataManager:
         self.accounts = self.db["accounts"]
         self.__root_path = self.__get_root_path()
         self.__keys_dir = "keys"
+        aws_account = self.get_set_account("AWS")
+        open_account = self.get_set_account("OPENSTACK")
+        self.aws_prov = AWS(aws_account["ACCOUNT_ID"], aws_account["ACCOUNT_SECRET_KEY"], aws_account["ACCOUNT_REGION"])
+        self.open_prov = OpenStack(open_account["ACCOUNT_ID"], open_account["ACCOUNT_PASSWORD"],
+                                   open_account["ACCOUNT_AUTH_URL"], open_account["ACCOUNT_AUTH_VERSION"],
+                                   open_account["ACCOUNT_TENANT_NAME"], open_account["ACCOUNT_IMAGE_VERSION"])
 
     def __get_root_path(self):
         full_path = os.getcwd()
@@ -25,7 +34,6 @@ class DataManager:
                 root_path += directory
                 return root_path
             root_path += "{}/".format(directory)
-
 
     def add_account(self, account):
         try:
@@ -63,7 +71,7 @@ class DataManager:
 
     def get_set_account(self, provider):
         try:
-            set_account = self.accounts.find_one({"PROVIDER": provider, "SET_ACCOUNT": True})
+            set_account = self.accounts.find_one({"PROVIDER": provider, "SET_ACCOUNT": True}, {'_id': False})
             return set_account
         except pymongo.errors.ServerSelectionTimeoutError as e:
             print(e)
@@ -79,10 +87,13 @@ class DataManager:
             print(e)
             return False
 
-    def add_key(self, filecontent, filename, provider):
+    def add_key(self, data):
         try:
-            with open("{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, provider, filename), "wb") as keyfile:
-                keyfile.write(filecontent)
+            with open("{}/{}/{}/{}".format(self.__root_path,
+                                           self.__keys_dir,
+                                           data["PROVIDER"],
+                                           data["KEY_NAME"]), "w") as key_file:
+                key_file.write(data["KEY_VALUE"])
         except Exception as e:
             print(e)
             return False
@@ -93,7 +104,19 @@ class DataManager:
             return os.listdir("{}/{}/{}/".format(self.__root_path, self.__keys_dir, provider))
         return []
 
-    def delete_key(self, key_name, provider):
+    def download_key(self, provider, key_name):
+        try:
+            result = {
+                "KEY_NAME": key_name,
+                "KEY_VALUE": ""
+            }
+            with open("{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, provider, key_name), "r") as keyfile:
+                result["KEY_VALUE"] = keyfile.read()
+            return result
+        except IOError as e:
+            return False
+
+    def delete_key(self, provider, key_name):
         try:
             if provider == "aws" or provider == "openstack":
                 os.remove("{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, provider, key_name))
@@ -101,6 +124,44 @@ class DataManager:
         except OSError as e:
             print(e)
             return False
+
+    def deploy(self, data):
+        # TODO: Implement on deployment branch more to do there not necessarily part of this branch for now
+        return True
+
+    def deploy_options(self, data):
+        result = {}
+        if data["PROVIDER"] == "aws":
+            provider = self.aws_prov
+        elif data["PROVIDER"] == "openstack":
+            provider = self.open_prov
+        else:
+            return False
+        if data["IMAGES"]:
+            images = []
+            image_objects = provider.list_images()
+            for image in image_objects:
+                images.append(str(image))
+            result["IMAGES"] = images
+        if data["SIZES"]:
+            sizes = []
+            size_objects = provider.list_sizes()
+            for size in size_objects:
+                sizes.append(str(size))
+            result["SIZES"] = sizes
+        if data["NETWORKS"]:
+            networks = []
+            network_objects = provider.list_networks()
+            for net in network_objects:
+                networks.append(str(net))
+            result["NETWORKS"] = networks
+        if data["SECURITY_GROUPS"]:
+            security_groups = []
+            security_objects = provider.list_security_groups()
+            for sec_group in security_objects:
+                security_groups.append(str(sec_group))
+            result["SECURITY_GROUPS"] = security_groups
+        return result
 
     def add_record(self, post_body):
         try:
@@ -115,13 +176,19 @@ class DataManager:
         except pymongo.errors.ServerSelectionTimeoutError as e:
             return False
 
-    def get_current_data(self, CLI):
+    def get_current_data(self):
         datetime.datetime.today()
         query_use = {"DATE_TIME": {"$lt": datetime.datetime.now(),
-                                   "$gt": datetime.datetime.now() - datetime.timedelta(minutes=5)}}
-        info_df = pd.DataFrame(list(self.inst_info.find()))
+                                   "$gt": datetime.datetime.now() - datetime.timedelta(minutes=5)}
+                     }
+        print(query_use)
+        provider_query = {}
+        info_df = pd.DataFrame(list(self.inst_info.find(provider_query)))
         usage_df = pd.DataFrame(list(self.inst_use.find(query_use)))
         vol_df = pd.DataFrame(list(self.vols.find(query_use)))
+
+        print(info_df)
+        print(usage_df)
 
         all_df = pd.merge(info_df, usage_df, on="ASSIGNED_ID", how="right")
 
@@ -130,11 +197,10 @@ class DataManager:
         all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
         all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
 
-        if not CLI:
-            return all_df[["TIMESTAMP", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
-                           "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS"]].to_json()
+        return all_df[["TIMESTAMP", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
+                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS"]].to_json()
 
-    def get_specific_data(self, CLI, year, month, day):
+    def get_specific_data(self, year, month=None, day=None):
         year_overall = False
         month_overall = False
         if month is None:
@@ -143,6 +209,10 @@ class DataManager:
         if day is None:
             month_overall = True
             day = 1
+
+        year = int(year)
+        month = int(month)
+        day = int(day)
 
         search_date = datetime.datetime(year, month, day)
         if year_overall:
@@ -199,9 +269,8 @@ class DataManager:
         all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
         all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
 
-        if not CLI:
-            return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
-                           "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS"]].to_json()
+        return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
+                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS"]].to_json()
 
     def __unpack(self, df, column, fillna=None):
         ret = None

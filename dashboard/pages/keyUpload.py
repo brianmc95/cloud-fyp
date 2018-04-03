@@ -59,7 +59,12 @@ def parse_contents(contents, filename, provider):
     decoded = base64.b64decode(content_string)
     status = False
     if 'pem' in filename:
-        status = dm.add_key(decoded, filename, provider)
+        payload = {
+            "PROVIDER": provider,
+            "KEY_NAME": filename,
+            "KEY_VALUE": decoded
+        }
+        dm.add_key(payload)
     return status
 
 @app.callback(Output('key-table', 'rows'),

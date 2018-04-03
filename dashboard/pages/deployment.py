@@ -3,11 +3,9 @@ import dash_html_components as html
 from dash.dependencies import Input, Output, State
 
 from dashboard.dashServer import app
-from accounts.AWS import AWS
-from accounts.OpenStack import OpenStackProvider
 
-aws = AWS()
-vscaler = OpenStackProvider()
+aws = ""
+vscaler = ""
 
 providers = {"Amazon Web Services": aws, "Vscaler": vscaler}
 
@@ -176,3 +174,5 @@ def launch_instance(n_clicks, provider, name, image_id, size_id, network_ids, se
                                            security_groups=deploy_sec)
 
     providers[provider].attach_volume(node, vol)
+
+# TODO: Update with changes to deployment.
