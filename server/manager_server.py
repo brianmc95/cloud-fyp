@@ -7,8 +7,7 @@
 import http.server
 import ssl
 import json
-import argparse
-from DataManager import DataManager
+from server.DataManager import DataManager
 
 
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
@@ -154,20 +153,11 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             print(e)
             return None
 
-def serve(ip, port, ssl_cert=None):
-    server_address = (ip, port)
+def run(ip, port, ssl_cert=None):
+    server_address = (ip, int(port))
 
     httpd = http.server.HTTPServer(server_address, SimpleHTTPRequestHandler)
     if ssl_cert:
         httpd.socket = ssl.wrap_socket(httpd.socket, certfile=''.format(ssl_cert), server_side=True)
     print("Serving HTTP on {} port: {} with ssl certificate file {} ...".format(ip, port, ssl_cert))
     httpd.serve_forever()
-
-if __name__ == "__main__":
-    parser = argparse.ArgumentParser(description='Start cloud service')
-    parser.add_argument("ip", help="IP Address of the central server in the system will run on")
-    parser.add_argument("port", help="port the server is hosted on")
-    parser.add_argument("ssl", help="SSL cert the server can use for encryption [Optional]", default=None)
-    args = parser.parse_args()
-
-    serve(args.ip, int(args.port), args.ssl)
