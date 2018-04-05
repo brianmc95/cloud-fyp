@@ -14,7 +14,7 @@ class OpenStack(Account):
     def __init__(self, access_name, password, auth_url, auth_version, tenant_name, project_id, glance_version):
         super().__init__()
         OpenStack = get_driver(Provider.OPENSTACK)
-        self.driver = OpenStack(access_name, password,
+        self.node_driver = OpenStack(access_name, password,
                                 ex_force_auth_url=auth_url,
                                 ex_force_auth_version=auth_version,
                                 ex_tenant_name=tenant_name)
@@ -30,14 +30,14 @@ class OpenStack(Account):
         #TODO: deal with glance version Migration service.
 
     def list_networks(self):
-        return self.driver.ex_list_networks()
+        return self.node_driver.ex_list_networks()
 
     def list_security_groups(self):
-        return self.driver.ex_list_security_groups()
+        return self.node_driver.ex_list_security_groups()
 
     def create_node(self, name, size, image, networks, security_groups):
         # Instantiate the Nova instance.
-        node = self.driver.create_node(name=name,
+        node = self.node_driver.create_node(name=name,
                                        size=size,
                                        image=image,
                                        networks=networks,
@@ -45,7 +45,7 @@ class OpenStack(Account):
         return node
 
     def get_node_info(self, node_id):
-        return self.driver.ex_get_node_details(node_id)
+        return self.node_driver.ex_get_node_details(node_id)
 
     def deploy_node_script(self, name, size, image, networks, security_groups, mon, script=None):
         steps = []
@@ -62,7 +62,7 @@ class OpenStack(Account):
 
         msd = MultiStepDeployment(steps)
 
-        node = self.driver.deploy_node(name=name,
+        node = self.node_driver.deploy_node(name=name,
                                        size=size,
                                        image=image,
                                        networks=networks,

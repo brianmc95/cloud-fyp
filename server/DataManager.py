@@ -24,7 +24,8 @@ class DataManager:
         self.aws_prov = AWS(aws_account["ACCOUNT_ID"], aws_account["ACCOUNT_SECRET_KEY"], aws_account["ACCOUNT_REGION"])
         self.open_prov = OpenStack(open_account["ACCOUNT_ID"], open_account["ACCOUNT_PASSWORD"],
                                    open_account["ACCOUNT_AUTH_URL"], open_account["ACCOUNT_AUTH_VERSION"],
-                                   open_account["ACCOUNT_TENANT_NAME"], open_account["ACCOUNT_IMAGE_VERSION"])
+                                   open_account["ACCOUNT_TENANT_NAME"], open_account["ACCOUNT_PROJECT_ID"],
+                                   open_account["ACCOUNT_IMAGE_VERSION"])
 
     def get_drivers(self):
         return self.aws_prov, self.open_prov
@@ -196,14 +197,10 @@ class DataManager:
         query_use = {"DATE_TIME": {"$lt": datetime.datetime.now(),
                                    "$gt": datetime.datetime.now() - datetime.timedelta(minutes=5)}
                      }
-        print(query_use)
         provider_query = {}
         info_df = pd.DataFrame(list(self.inst_info.find(provider_query)))
         usage_df = pd.DataFrame(list(self.inst_use.find(query_use)))
         vol_df = pd.DataFrame(list(self.vols.find(query_use)))
-
-        print(info_df)
-        print(usage_df)
 
         all_df = pd.merge(info_df, usage_df, on="ASSIGNED_ID", how="right")
 
@@ -212,8 +209,19 @@ class DataManager:
         all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
         all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
 
+        # Do the costings
+        size_prices = []
+        for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
+            if provider == "AWS":
+                size_obj = self.aws_prov.get_size(size)
+                size_prices.append(size_obj.price)
+            elif provider == "OPENSTACK":
+                size_obj = self.open_prov.get_size(size)
+                size_prices.append(size_obj.price)
+
+        all_df["COST"] = size_prices
         return all_df[["TIMESTAMP", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
-                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS"]].to_json()
+                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]].to_json()
 
     def get_specific_data(self, year, month=None, day=None):
         year_overall = False
@@ -252,6 +260,7 @@ class DataManager:
             {
                 "$group": {
                     "_id": id_field,
+                    "RECORDS": {"$sum": 1},
                     "CPU_USAGE": {"$avg": "$CPU_USAGE"},
                     "MEM_AVAIL": {"$avg": "$MEM_AVAIL"},
                     "MEM_TOTAL": {"$max": "$MEM_TOTAL"},
@@ -284,8 +293,22 @@ class DataManager:
         all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
         all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
 
+        # Do the costings
+        size_prices = []
+        for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
+            if provider == "AWS":
+                size_obj = self.aws_prov.get_size(size)
+                size_prices.append(size_obj.price)
+            elif provider == "OPENSTACK":
+                size_obj = self.open_prov.get_size(size)
+                size_prices.append(size_obj.price)
+
+        full_cost = [((cost/(60/5)) * records) for cost, records in zip(size_prices, all_df["RECORDS"])]
+
+        all_df["COST"] = full_cost
+
         return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
-                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS"]].to_json()
+                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]].to_json()
 
     def __unpack(self, df, column, fillna=None):
         ret = None

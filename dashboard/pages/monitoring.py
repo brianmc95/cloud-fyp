@@ -15,7 +15,8 @@ days = range(1, 31)
 
 def get_columns():
     return ["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
-            "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS"]
+            "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]
+
 
 layout = html.Div([
     html.Label("Year"),
@@ -92,12 +93,12 @@ def set_days(selected_month, selected_year):
      Input("day-dropdown", "value")])
 def update_table(selected_year, selected_month, selected_day):
     if selected_year in years:
-        json_df = dm.get_specific_data(False, selected_year, selected_month, selected_day)
+        json_df = dm.get_specific_data(selected_year, selected_month, selected_day)
         if not json_df:
             return []
         all_df = pd.read_json(json_df)
         return all_df.to_dict("records")
-    return dm.get_current_data(False)
+    return dm.get_current_data()
 
 
 @app.callback(
@@ -120,8 +121,8 @@ def update_selected_row_indices(clickData, selected_row_indices):
 def update_figure(rows, selected_row_indices):
     dff = pd.DataFrame(rows)
     fig = plotly.tools.make_subplots(
-        rows=3, cols=1,
-        subplot_titles=('CPU Usage', 'Memory Usage', 'Network Usage',),
+        rows=4, cols=1,
+        subplot_titles=('CPU Usage', 'Memory Usage', 'Network Usage', 'Costing'),
         shared_xaxes=True)
     marker = {'color': ['#0074D9']*len(dff)}
     for i in (selected_row_indices or []):
@@ -134,7 +135,7 @@ def update_figure(rows, selected_row_indices):
     }, 1, 1)
     fig.append_trace({
         'x': dff['INSTANCE_NAME'],
-        'y': dff["MEMORY_USAGE"],
+        'y': dff["MEMORY_USAGE"]/dff["MEMORY_TOTAL"],
         'type': 'bar',
         'marker': marker
     }, 2, 1)
@@ -144,6 +145,12 @@ def update_figure(rows, selected_row_indices):
         'type': 'bar',
         'marker': marker
     }, 3, 1)
+    fig.append_trace({
+        'x': dff['INSTANCE_NAME'],
+        'y': dff['COST'],
+        'type': 'bar',
+        'marker': marker
+    }, 4, 1)
     fig['layout']['showlegend'] = False
     fig['layout']['height'] = 800
     fig['layout']['margin'] = {
@@ -152,5 +159,6 @@ def update_figure(rows, selected_row_indices):
         't': 60,
         'b': 200
     }
-    fig['layout']['yaxis3']['type'] = 'log'
+    fig['layout']['yaxis1'].update(range=[0, 100])
+    fig['layout']['yaxis2'].update(range=[0, 100])
     return fig
