@@ -129,8 +129,20 @@ class DataManager:
             return False
 
     def deploy(self, data):
-
-        return True
+        provider = None
+        if data["PROVIDER"] == "aws":
+            provider = self.aws_prov
+        elif data["PROVIDER"] == "openstack":
+            provider = self.open_prov
+        if provider:
+            image = provider.get_image(data["IMAGE"])
+            size = provider.get_size(data["SIZE"])
+            networks = provider.get_networks(data["NETWORKS"])
+            security_groups = provider.get_security_groups(data["SECURITY_GROUPS"])
+            if image and size:
+                provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True)
+                return True
+        return False
 
     def deploy_options(self, data):
         result = {}
