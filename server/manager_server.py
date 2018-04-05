@@ -8,7 +8,7 @@ import http.server
 import ssl
 import json
 import argparse
-from server.DataManager import DataManager
+from DataManager import DataManager
 
 
 class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
