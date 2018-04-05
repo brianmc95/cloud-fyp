@@ -33,9 +33,9 @@ class DataManager:
                                        open_account["ACCOUNT_AUTH_URL"], open_account["ACCOUNT_AUTH_VERSION"],
                                        open_account["ACCOUNT_TENANT_NAME"], open_account["ACCOUNT_PROJECT_ID"],
                                        open_account["ACCOUNT_IMAGE_VERSION"])
-            return aws_prov, open_prov
         except TypeError as e:
             print("Please add accounts to the system")
+        return aws_prov, open_prov
 
     def get_drivers(self):
         return self.aws_prov, self.open_prov
