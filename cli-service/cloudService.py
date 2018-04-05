@@ -45,16 +45,17 @@ def deploy(config, name, provider, image, size, networks, securitygroups):
                "SIZE": size,
                "NETWORKS": networks,
                "SECURITY_GROUPS": securitygroups}
-    r = requests.post("http://{}:{}/deploy/".format(config.manager_ip, config.manager_port), json=payload)
-
-    if r.status_code == 200:
-        response = r.content
-        click.echo(response)
-        click.echo("Node: {} successfully deployed".format(name))
-        return 0
-    else:
-        click.echo("Node: {} was not able to be deployed".format(name))
-        return 1
+    print(payload)
+    # r = requests.post("http://{}:{}/deploy/".format(config.manager_ip, config.manager_port), json=payload)
+    #
+    # if r.status_code == 200:
+    #     response = r.content
+    #     click.echo(response)
+    #     click.echo("Node: {} successfully deployed".format(name))
+    #     return 0
+    # else:
+    #     click.echo("Node: {} was not able to be deployed".format(name))
+    #     return 1
 
 @cli.command()
 @click.option("--provider", "-pr", type=click.Choice(["aws", "openstack"]), help="Provider you wish to interact with")
