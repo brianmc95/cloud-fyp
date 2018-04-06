@@ -248,13 +248,13 @@ class DataManager:
                     size_obj = self.aws_prov.get_size(size)
                     size_prices.append(size_obj.price)
                 else:
-                    return []
+                    size_prices.append(0)
             elif provider == "OPENSTACK":
                 if self.open_prov:
                     size_obj = self.open_prov.get_size(size)
                     size_prices.append(size_obj.price)
                 else:
-                    return []
+                    size_prices.append(0)
 
         all_df["COST"] = size_prices
         return all_df[["TIMESTAMP", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
