@@ -53,7 +53,7 @@ class OpenStack(Account):
             config_file = open("config/manager-config.json")
             config_json = json.load(config_file)
             node_id = self.gen_id()
-            ip = config_json["ip"]
+            ip = config_json["public-ip"]
             port = config_json["port"]
             mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
             steps.append(ScriptDeployment(self.__linux_mon, args=mon_args))

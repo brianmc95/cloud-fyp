@@ -321,7 +321,7 @@ def aws_account(config, accountname, accountid, region, secretkey):
     }
     try:
         with open(secretkey, "r") as secret_key_file:
-            payload["ACCOUNT_SECRET_KEY"] = secret_key_file.read()
+            payload["ACCOUNT_SECRET_KEY"] = secret_key_file.read().strip()
         set_url = "http://{}:{}/account/add/".format(config.manager_ip, config.manager_port)
         r = requests.post(set_url, data=json.dumps(payload))
         if r.status_code == 200:

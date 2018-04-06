@@ -1,5 +1,7 @@
 {
-  "ip" : "185.49.63.226",
+  "internal-ip" : "192.168.0.40",
+  "public-ip": "185.49.63.226",
   "name" : "migration",
-  "port" : 8080
+  "port" : 8080,
+  "ssl-cert": null
 }

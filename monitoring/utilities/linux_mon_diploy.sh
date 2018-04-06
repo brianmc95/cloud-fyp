@@ -31,7 +31,7 @@ done
 
 echo IP OF MANAGER        = "${IP}"
 echo PORT OPEN ON MANAGER = "${PORT}"
-echo ID OF MACHINE        = "${IP}"
+echo ID OF MACHINE        = "${ID}"
 echo PROVIDER             = "${PROVIDER}"
 
 git clone https://github.com/brianmc95/cloud-fyp.git
@@ -45,6 +45,8 @@ cp ${cwd}/cloud-fyp/monitoring/Monitor.py ${cwd}/monitor/
 
 rm -rf cloud-fyp
 
-echo "*/5 * * * * python3 ${cwd}/monitor/Monitor.py --ip ${IP} -p ${PORT} --id ${ID} --provider ${PROVIDER}" > monitor/mon_cron_job
+pip3 install requests
+
+echo "*/5 * * * * python3 ${cwd}/monitor/Monitor.py -ip ${IP} -p ${PORT} -id ${ID} --provider ${PROVIDER}" > monitor/mon_cron_job
 
 crontab mon_cron_job
