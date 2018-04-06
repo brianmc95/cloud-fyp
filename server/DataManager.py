@@ -190,6 +190,23 @@ class DataManager:
             result["SECURITY_GROUPS"] = security_groups
         return result
 
+    def delete_node(self, data):
+        if data["PROVIDER"] == "aws":
+            provider = self.aws_prov
+        elif data["PROVIDER"] == "openstack":
+            provider = self.open_prov
+        else:
+            return False
+        if data["NODE_ID"]:
+            node = provider.get_node(id=data["NODE_ID"])
+            provider.destroy_node(node)
+        elif data["NODE_NAME"]:
+            node = provider.get_node(name=data["NODE_NAME"])
+            provider.destroy_node(node)
+        else:
+            return False
+        return True
+
     def add_record(self, post_body):
         try:
             # Convert to dict

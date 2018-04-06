@@ -45,17 +45,39 @@ def deploy(config, name, provider, image, size, networks, securitygroups):
                "SIZE": size,
                "NETWORKS": networks,
                "SECURITY_GROUPS": securitygroups}
-    print(payload)
-    # r = requests.post("http://{}:{}/deploy/".format(config.manager_ip, config.manager_port), json=payload)
-    #
-    # if r.status_code == 200:
-    #     response = r.content
-    #     click.echo(response)
-    #     click.echo("Node: {} successfully deployed".format(name))
-    #     return 0
-    # else:
-    #     click.echo("Node: {} was not able to be deployed".format(name))
-    #     return 1
+    r = requests.post("http://{}:{}/deploy/".format(config.manager_ip, config.manager_port), json=json.dumps(payload))
+
+    if r.status_code == 200:
+        response = r.content
+        click.echo(response)
+        click.echo("Node: {} successfully deployed".format(name))
+        return 0
+    else:
+        click.echo("Node: {} was not able to be deployed".format(name))
+        return 1
+
+@cli.command()
+@click.option("--provider", "-pr", type=click.Choice(["aws", "openstack"]), help="Provider you wish to interact with")
+@click.option("--name", "-n", help="Name of the instance you wish to destroy")
+@click.option("--nodeID", "-id", help="ID of the instance to be destoryed")
+@pass_config
+def delete_node(config, provider, name, nodeid):
+    """
+    Allows for the deletion of a node of a particular provider.
+    """
+    payload = {"NODE_NAME": name,
+               "PROVIDER": provider,
+               "NODE_ID": nodeid}
+    r = requests.post("http://{}:{}/delete-node/".format(config.manager_ip, config.manager_port), json=json.dumps(payload))
+
+    if r.status_code == 200:
+        response = r.content
+        click.echo(response)
+        click.echo("Node: {} successfully delted".format(name))
+        return 0
+    else:
+        click.echo("Node: {} was not able to be deleted".format(name))
+        return 1
 
 @cli.command()
 @click.option("--provider", "-pr", type=click.Choice(["aws", "openstack"]), help="Provider you wish to interact with")
@@ -226,12 +248,13 @@ def key_management(config, provider, keyname, keylocation, download, upload, lis
 @cli.group()
 @click.option("--provider", "-pr", type=click.Choice(["aws", "openstack"]), help="Provider you wish to interact with")
 @click.option("--accountName", "-an", default="", help="Name of the account you wish to set (only used with setAccount)")
-@click.option("--setAccount", "-s", help="Set account that nodes will be created with")
-@click.option("--listAccounts", "-l", help="List accounts available to use")
+@click.option("--setAccount", "-s", is_flag=True, help="Set account that nodes will be created with")
+@click.option("--listAccounts", "-l", is_flag=True, help="List accounts available to use")
+@click.option("--deleteAccount", "-d", is_flag=True, help="Delete the named account")
 @pass_config
-def account(config, provider, accountname, setaccount, listaccounts):
+def account(config, provider, accountname, setaccount, listaccounts, deleteaccount):
     """
-    Allows for the configuration of cloud provider accounts.\n
+    Allows for the management of accounts.\n
     setAccount: Allows the setting of an account, requires accountName to be set
     listAccounts: List all accounts available (Filtered by provider)
     """
@@ -258,6 +281,15 @@ def account(config, provider, accountname, setaccount, listaccounts):
             click.echo("Failed to list accounts for provider {}".format(provider))
             return 1
 
+        if deleteaccount:
+            set_url = "http://{}:{}/account/delete/".format(config.manager_ip, config.manager_port)
+            r = requests.post(set_url, data=json.dumps(payload))
+            if r.status_code == 200:
+                click.echo("Successfully delete account {} for provider {}".format(accountname, provider))
+                return 0
+            click.echo("Failed to delete account {} for provider {}".format(accountname, provider))
+            return 1
+
     except requests.exceptions.HTTPError as errh:
         click.echo("Http Error: {}".format(errh))
     except requests.exceptions.ConnectionError as errc:
@@ -271,7 +303,7 @@ def account(config, provider, accountname, setaccount, listaccounts):
         click.echo("Was unable to find file at location")
 
 
-@account.command()
+@cli.command()
 @click.option("--accountName", "-an", help="Name of the account you are creating.")
 @click.option("--accountID", "-ai", help="ID associated with the account.")
 @click.option("--region", "-r", help="Region in which the account will operate.")
@@ -293,7 +325,7 @@ def aws_account(config, accountname, accountid, region, secretkey):
         with open(secretkey, "r") as secret_key_file:
             payload["ACCOUNT_SECRET_KEY"] = secret_key_file.read()
         set_url = "http://{}:{}/account/add/".format(config.manager_ip, config.manager_port)
-        r = requests.post(set_url, data=payload)
+        r = requests.post(set_url, data=json.dumps(payload))
         if r.status_code == 200:
             click.echo("Account {} successfully added".format(accountname))
             return 0
@@ -311,7 +343,7 @@ def aws_account(config, accountname, accountid, region, secretkey):
         click.echo(e)
         click.echo("Was unable to find file at location")
 
-@account.command()
+@cli.command()
 @click.option("--accountName", "-an", help="Name of the account you are creating")
 @click.option("--accountID", "-ai", help="ID of the account you are creating")
 @click.option("--authorizationURL", "-au", help="URL of the OpenStack instsnce you are accessing")
@@ -339,7 +371,7 @@ def openstack_account(config, accountname, accountid, authorizationurl, authoriz
     }
     try:
         set_url = "http://{}:{}/account/add/".format(config.manager_ip, config.manager_port)
-        r = requests.post(set_url, data=payload)
+        r = requests.post(set_url, data=json.dumps(payload))
         if r.status_code == 200:
             click.echo("Account {} successfully added".format(accountname))
             return 0

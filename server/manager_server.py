@@ -93,6 +93,18 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     self.logger.info("Successfully sent deployment information")
                     success = True
 
+        elif "/delete-node/" in self.path:
+            data = self.read_request()
+            if data:
+                result = self.dm.delete_node(data)
+                if result:
+                    self.send_response(200)
+                    self.send_header("Content-Type", "application/json")
+                    self.end_headers()
+                    self.wfile.write(json.dumps(result).encode())
+                    self.logger.info("Successfully sent deployment information")
+                    success = True
+
         elif "/key/" in self.path:
             data = self.read_request()
             if data:
