@@ -89,7 +89,7 @@ class DataManager:
             result_set = self.accounts.update_one({"ACCOUNT_NAME": account_name, "PROVIDER": provider}, {"$set": {"SET_ACCOUNT": True}})
             if result_set.modified_count > 0 and (result_unset.matched_count > 0 and result_unset.modified_count > 0) or result_unset.matched_count == 0:
                 self.aws_prov, self.open_prov = self.setup_drivers()
-                self.logger.log("Successfully set account {} for provider {}".format(account_name, provider))
+                self.logger.info("Successfully set account {} for provider {}".format(account_name, provider))
                 return True
             return False
         except pymongo.errors.ConnectionFailure as e:
