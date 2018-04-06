@@ -6,6 +6,8 @@ import datetime
 import os
 from accounts.OpenStack import OpenStack
 from accounts.AWS import AWS
+import logging
+
 
 
 class DataManager:
@@ -20,6 +22,7 @@ class DataManager:
         self.__root_path = self.__get_root_path()
         self.__keys_dir = "keys"
         self.aws_prov, self.open_prov = self.setup_drivers()
+        self.logger = logging.getLogger(__name__)
 
     def setup_drivers(self):
         aws_account = self.get_set_account("AWS")
@@ -52,10 +55,12 @@ class DataManager:
         try:
             insert_id = self.accounts.insert_one(account).inserted_id
             if insert_id:
+                self.logger.info("Successfully added the account, inserted in {}".format(insert_id))
                 return True
             return False
-        except pymongo.errors.ServerSelectionTimeoutError as e:
-            print(e)
+        except pymongo.errors.ConnectionFailure as e:
+            self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
             return False
 
     def get_accounts(self, provider=None):
@@ -67,11 +72,13 @@ class DataManager:
                             "PROVIDER": document["PROVIDER"],
                             "SET_ACCOUNT": document["SET_ACCOUNT"]}
                     accounts.append(account)
+                self.logger.debug("Retrieved accounts for provider {}, accounts are {}".format(provider, accounts))
                 return accounts
             else:
                 return list(self.accounts.find({}, {'_id': False}))
-        except pymongo.errors.ServerSelectionTimeoutError as e:
-            print(e)
+        except pymongo.errors.ConnectionFailure as e:
+            self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
             return False
 
     def set_account(self, account_name, provider):
@@ -80,28 +87,34 @@ class DataManager:
             result_set = self.accounts.update_one({"ACCOUNT_NAME": account_name, "PROVIDER": provider}, {"$set": {"SET_ACCOUNT": True}})
             if result_set.modified_count > 0 and (result_unset.matched_count > 0 and result_unset.modified_count > 0) or result_unset.matched_count == 0:
                 self.aws_prov, self.open_prov = self.setup_drivers()
+                self.logger.log("Successfully set account {} for provider {}".format(account_name, provider))
                 return True
             return False
-        except pymongo.errors.ServerSelectionTimeoutError as e:
-            print(e)
+        except pymongo.errors.ConnectionFailure as e:
+            self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
             return False
 
     def get_set_account(self, provider):
         try:
             set_account = self.accounts.find_one({"PROVIDER": provider, "SET_ACCOUNT": True}, {'_id': False})
+            self.logger.info("Set account retrieved {}".format(set_account))
             return set_account
-        except pymongo.errors.ServerSelectionTimeoutError as e:
-            print(e)
+        except pymongo.errors.ConnectionFailure as e:
+            self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
             return False
 
     def delete_account(self, account_name, provider):
         try:
             delete_account = self.accounts.delete_one({"PROVIDER": provider, "ACCOUNT_NAME": account_name})
             if delete_account.deleted_count > 0:
+                self.logger.info("Account {} for provider {} deleted successfully".format(account_name, provider))
                 return True
             return False
-        except pymongo.errors.ServerSelectionTimeoutError as e:
-            print(e)
+        except pymongo.errors.ConnectionFailure as e:
+            self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
             return False
 
     def add_key(self, data):
@@ -111,8 +124,10 @@ class DataManager:
                                            data["PROVIDER"],
                                            data["KEY_NAME"]), "w") as key_file:
                 key_file.write(data["KEY_VALUE"])
+                self.logger.info("Key {} added for provider {}".format(data["KEY_NAME"], data["PROVIDER"]))
         except Exception as e:
-            print(e)
+            self.logger.exception("Could not add the key")
+            self.logger.exception(e)
             return False
         return True
 
@@ -129,17 +144,22 @@ class DataManager:
             }
             with open("{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, provider, key_name), "r") as keyfile:
                 result["KEY_VALUE"] = keyfile.read()
+            self.logger.info("Pulled the key successfully")
             return result
         except IOError as e:
+            self.logger.exception("Key {} for provider {} could not be pulled".format(key_name, provider))
+            self.logger.exception(e)
             return False
 
     def delete_key(self, provider, key_name):
         try:
             if provider == "aws" or provider == "openstack":
                 os.remove("{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, provider, key_name))
+                self.logger.info("Successfully delete key {} for provider {}".format(key_name, provider))
                 return True
         except OSError as e:
-            print(e)
+            self.logger.exception("Could not remove key {}".format(key_name))
+            self.logger.exception(e)
             return False
 
     def deploy(self, data):
@@ -153,9 +173,13 @@ class DataManager:
             size = provider.get_size(data["SIZE"])
             networks = provider.get_networks(data["NETWORKS"])
             security_groups = provider.get_security_groups(data["SECURITY_GROUPS"])
+            self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {}
+             security groups {}""".format(data["PROVIDER"], image, size, networks, security_groups))
             if image and size:
                 provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True)
+                self.logger.info("Deployed node {} successfully".format(data["NAME"]))
                 return True
+        self.logger.info("Unable to deploy node {}".format(data["NAME"]))
         return False
 
     def deploy_options(self, data):
@@ -165,8 +189,10 @@ class DataManager:
         elif data["PROVIDER"] == "openstack":
             provider = self.open_prov
         else:
+            self.logger.info("Provider was not valid and so exiting")
             return False
         if provider is None:
+            self.logger.info("No account has be set so exiting")
             return False
         if data["IMAGES"]:
             images = []
@@ -192,6 +218,8 @@ class DataManager:
             for sec_group in security_objects:
                 security_groups.append(str(sec_group))
             result["SECURITY_GROUPS"] = security_groups
+
+        self.logger.info("Deployment options to be sent {}".format(result))
         return result
 
     def delete_node(self, data):
@@ -200,16 +228,21 @@ class DataManager:
         elif data["PROVIDER"] == "openstack":
             provider = self.open_prov
         else:
+            self.logger.info("No valid provider provided")
             return False
         if provider is None:
+            self.logger.info("Provider is not set so exiting")
             return False
         if data["NODE_ID"]:
             node = provider.get_node(id=data["NODE_ID"])
             provider.destroy_node(node)
+            self.logger.info("Deleted node {} for provider {}".format(data["NODE_ID"], data["PROVIDER"]))
         elif data["NODE_NAME"]:
             node = provider.get_node(name=data["NODE_NAME"])
             provider.destroy_node(node)
+            self.logger.info("Deleted node {} for provider {}".format(data["NODE_NAME"], data["PROVIDER"]))
         else:
+            self.logger.info("No node name or node id provided exiting")
             return False
         return True
 
@@ -222,8 +255,11 @@ class DataManager:
             # Put data into mongoDB
             instance_post_id = self.inst_use.insert_one(instance_info).inserted_id
             vol_post_id = self.vols.insert_one(disk_info).inserted_id
+            self.logger.info("Added a record to the db")
             return instance_post_id
-        except pymongo.errors.ServerSelectionTimeoutError as e:
+        except pymongo.errors.ConnectionFailure as e:
+            self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
             return False
 
     def get_current_data(self):
