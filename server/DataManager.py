@@ -26,15 +26,14 @@ class DataManager:
         open_account = self.get_set_account("OPENSTACK")
         aws_prov = None
         open_prov = None
-        try:
+        if aws_account:
             aws_prov = AWS(aws_account["ACCOUNT_ID"], aws_account["ACCOUNT_SECRET_KEY"],
                                 aws_account["ACCOUNT_REGION"])
+        if open_account:
             open_prov = OpenStack(open_account["ACCOUNT_ID"], open_account["ACCOUNT_PASSWORD"],
-                                       open_account["ACCOUNT_AUTH_URL"], open_account["ACCOUNT_AUTH_VERSION"],
-                                       open_account["ACCOUNT_TENANT_NAME"], open_account["ACCOUNT_PROJECT_ID"],
-                                       open_account["ACCOUNT_IMAGE_VERSION"])
-        except TypeError as e:
-            print("Please add accounts to the system")
+                                  open_account["ACCOUNT_AUTH_URL"], open_account["ACCOUNT_AUTH_VERSION"],
+                                  open_account["ACCOUNT_TENANT_NAME"], open_account["ACCOUNT_PROJECT_ID"],
+                                  open_account["ACCOUNT_IMAGE_VERSION"])
         return aws_prov, open_prov
 
     def get_drivers(self):
@@ -77,7 +76,7 @@ class DataManager:
             result_unset = self.accounts.update_one({"PROVIDER": provider, "SET_ACCOUNT": True}, {"$set": {"SET_ACCOUNT": False}})
             result_set = self.accounts.update_one({"ACCOUNT_NAME": account_name, "PROVIDER": provider}, {"$set": {"SET_ACCOUNT": True}})
             if result_set.modified_count > 0 and (result_unset.matched_count > 0 and result_unset.modified_count > 0) or result_unset.matched_count == 0:
-                self.setup_drivers()
+                self.aws_prov, self.open_prov = self.setup_drivers()
                 return True
             return False
         except pymongo.errors.ServerSelectionTimeoutError as e:
