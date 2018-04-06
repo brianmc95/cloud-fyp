@@ -163,6 +163,8 @@ class DataManager:
             provider = self.open_prov
         else:
             return False
+        if provider is None:
+            return False
         if data["IMAGES"]:
             images = []
             image_objects = provider.list_images()
@@ -195,6 +197,8 @@ class DataManager:
         elif data["PROVIDER"] == "openstack":
             provider = self.open_prov
         else:
+            return False
+        if provider is None:
             return False
         if data["NODE_ID"]:
             node = provider.get_node(id=data["NODE_ID"])
@@ -240,11 +244,17 @@ class DataManager:
         size_prices = []
         for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
             if provider == "AWS":
-                size_obj = self.aws_prov.get_size(size)
-                size_prices.append(size_obj.price)
+                if self.aws_prov:
+                    size_obj = self.aws_prov.get_size(size)
+                    size_prices.append(size_obj.price)
+                else:
+                    return []
             elif provider == "OPENSTACK":
-                size_obj = self.open_prov.get_size(size)
-                size_prices.append(size_obj.price)
+                if self.open_prov:
+                    size_obj = self.open_prov.get_size(size)
+                    size_prices.append(size_obj.price)
+                else:
+                    return []
 
         all_df["COST"] = size_prices
         return all_df[["TIMESTAMP", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
