@@ -5,10 +5,10 @@ import json
 from .Migrate import Migrate
 
 # If applicable, delete the existing log file to generate a fresh log file during each execution
-if path.isfile("migration.log"):
-    remove("migration.log")
+if path.isfile("logging/migration.log"):
+    remove("logging/migration.log")
 
-with open("logging-config.json", 'r') as logging_configuration_file:
+with open("logging/migration.json", 'r') as logging_configuration_file:
     config_dict = json.load(logging_configuration_file)
 
 logging.config.dictConfig(config_dict)

@@ -7,6 +7,7 @@
 import http.server
 import ssl
 import json
+import logging
 from server.DataManager import DataManager
 
 
@@ -21,6 +22,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
     """
 
     httpd = None
+    logger = logging.getLogger(__name__)
 
     server_version = "SimpleHTTPWithUpload/"
     dm = DataManager()
@@ -35,6 +37,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if result:
                     self.send_response(200)
                     self.end_headers()
+                    self.logger.info("Successfully added an account")
                     success = True
 
         elif "/account/set/" in self.path:
@@ -44,6 +47,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if result:
                     self.send_response(200)
                     self.end_headers()
+                    self.logger.info("Successfully set an account")
                     success = True
 
         elif "/account/list/" in self.path:
@@ -54,6 +58,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(json.dumps(result).encode())
+                    self.logger.info("Successfully listed accounts")
                     success = True
 
         elif "/account/delete/" in self.path:
@@ -63,6 +68,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if result:
                     self.send_response(200)
                     self.end_headers()
+                    self.logger.info("Successfully deleted an account")
                     success = True
 
         elif "/deploy/" in self.path:
@@ -72,6 +78,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if result:
                     self.send_response(200)
                     self.end_headers()
+                    self.logger.info("Successfully deployed node")
                     success = True
 
         elif "/deploy-options/" in self.path:
@@ -83,6 +90,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(json.dumps(result).encode())
+                    self.logger.info("Successfully sent deployment information")
                     success = True
 
         elif "/key/" in self.path:
@@ -102,6 +110,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(json.dumps(result).encode())
+                    self.logger.info("Successfully dealt with key request")
                     success = True
 
         elif "/migrate/" in self.path:
@@ -111,6 +120,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if result:
                     self.send_response(200)
                     self.end_headers()
+                    self.logger.info("Migration successfully begun")
                     success = True
 
         elif "/monitor/" in self.path:
@@ -125,6 +135,7 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(json.dumps(result).encode())
+                    self.logger.info("Successfully sent monitoring data")
                     success = True
 
         elif "/addrecord/" in self.path:
@@ -135,8 +146,10 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                     self.send_response(200)
                     self.end_headers()
                     success = True
+                    self.logger.info("Success in adding a record")
 
         if not success:
+            self.logger.info("Request could not be successfully handled")
             self.send_response(404)
             self.send_header("Content-Type", "html/text")
             self.end_headers()
@@ -144,13 +157,15 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
 
     def read_request(self):
         try:
+            self.logger.info("Request recieved from: {}".format(self.headers["client_address"]))
+            self.logger.info("Path of request: {}".format(self.path))
             length = int(self.headers["content-length"])
             post_body = self.rfile.read(length).decode("utf-8", "ignore")
-            print(post_body)
             data = json.loads(post_body)
+            self.logger.info("Request data is {}".format(data))
             return data
         except json.JSONDecodeError as e:
-            print(e)
+            self.logger.exception("Message could not be decoded into JSON")
             return None
 
 def run(ip, port, ssl_cert=None):

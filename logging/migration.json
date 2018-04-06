@@ -12,7 +12,7 @@
             "class": "logging.FileHandler",
             "level": "DEBUG",
             "formatter": "simple",
-            "filename": "migration.log",
+            "filename": "logging/migration.log",
             "encoding": "utf8"
         },
         "stream_handler": {
