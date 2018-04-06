@@ -63,7 +63,10 @@ class DataManager:
             if provider:
                 accounts = []
                 for document in self.accounts.find({"PROVIDER": provider}, {'_id': False}):
-                    accounts.append(document)
+                    account = {"ACCOUNT_NAME": document["ACCOUNT_NAME"],
+                            "PROVIDER": document["PROVIDER"],
+                            "SET_ACCOUNT": document["SET_ACCOUNT"]}
+                    accounts.append(account)
                 return accounts
             else:
                 return list(self.accounts.find({}, {'_id': False}))
