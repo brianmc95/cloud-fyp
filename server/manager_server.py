@@ -55,10 +55,11 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
             if data:
                 result = self.dm.get_accounts(data["PROVIDER"])
                 if result:
+                    self.send_response(200)
                     self.send_header("Content-Type", "application/json")
                     self.end_headers()
                     self.wfile.write(json.dumps(result).encode())
-                    self.logger.info("Successfully listed accounts")
+                    self.logger.info("Successfully sent deployment information")
                     success = True
 
         elif "/account/delete/" in self.path:
