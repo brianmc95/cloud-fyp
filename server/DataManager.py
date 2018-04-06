@@ -9,8 +9,9 @@ from accounts.AWS import AWS
 import logging
 
 
-
 class DataManager:
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self):
         self.client = MongoClient('localhost', 27017)
@@ -22,7 +23,6 @@ class DataManager:
         self.__root_path = self.__get_root_path()
         self.__keys_dir = "keys"
         self.aws_prov, self.open_prov = self.setup_drivers()
-        self.logger = logging.getLogger(__name__)
 
     def setup_drivers(self):
         aws_account = self.get_set_account("AWS")
