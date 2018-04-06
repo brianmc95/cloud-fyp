@@ -25,8 +25,10 @@ class DataManager:
         self.aws_prov, self.open_prov = self.setup_drivers()
 
     def setup_drivers(self):
-        aws_account = self.get_set_account("AWS")
-        open_account = self.get_set_account("OPENSTACK")
+        aws_account = self.get_set_account("aws")
+        open_account = self.get_set_account("openstack")
+        self.logger.info("Set aws account is {}".format(aws_account))
+        self.logger.info("Set openstack account is {}".format(open_account))
         aws_prov = None
         open_prov = None
         if aws_account:
@@ -192,7 +194,7 @@ class DataManager:
             self.logger.info("Provider was not valid and so exiting")
             return False
         if provider is None:
-            self.logger.info("No account has be set so exiting")
+            self.logger.info("No account has been set so exiting")
             return False
         if data["IMAGES"]:
             images = []
