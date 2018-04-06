@@ -245,7 +245,7 @@ def key_management(config, provider, keyname, keylocation, download, upload, lis
         click.echo(e)
         click.echo("Was unable to find file at location {}".format(keylocation))
 
-@cli.group()
+@cli.command()
 @click.option("--provider", "-pr", type=click.Choice(["aws", "openstack"]), help="Provider you wish to interact with")
 @click.option("--accountName", "-an", default="", help="Name of the account you wish to set (only used with setAccount)")
 @click.option("--setAccount", "-s", is_flag=True, help="Set account that nodes will be created with")
@@ -255,8 +255,6 @@ def key_management(config, provider, keyname, keylocation, download, upload, lis
 def account(config, provider, accountname, setaccount, listaccounts, deleteaccount):
     """
     Allows for the management of accounts.\n
-    setAccount: Allows the setting of an account, requires accountName to be set
-    listAccounts: List all accounts available (Filtered by provider)
     """
     try:
         payload = {
@@ -318,7 +316,7 @@ def aws_account(config, accountname, accountid, region, secretkey):
         "ACCOUNT_ID": accountid,
         "ACCOUNT_REGION": region,
         "ACCOUNT_SECRET_KEY": None,
-        "PROVIDER": "AWS",
+        "PROVIDER": "aws",
         "SET_ACCOUNT": False
     }
     try:
@@ -366,7 +364,7 @@ def openstack_account(config, accountname, accountid, authorizationurl, authoriz
         "ACCOUNT_TENANT_NAME": tenantname,
         "ACCOUNT_PASSWORD": password,
         "ACCOUNT_PROJECT_ID": projectid,
-        "PROVIDER": "OPENSTACK",
+        "PROVIDER": "openstack",
         "SET_ACCOUNT": False
     }
     try:
