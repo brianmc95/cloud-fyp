@@ -52,6 +52,7 @@ class OpenStack(Account):
 
     def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_loc, script=None):
         try:
+            self.logger.info("Beggining the deployment of the instance")
             steps = []
             if mon:
                 config_file = open("config/manager-config.json")
