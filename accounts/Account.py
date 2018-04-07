@@ -16,9 +16,12 @@ import datetime
 import os
 import random
 from retrying import retry
+import logging
 
 
 class Account:
+
+    logger = logging.getLogger(__name__)
 
     def __init__(self):
         self.node_driver = NodeDriver(key="SimpleBase")

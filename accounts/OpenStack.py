@@ -70,6 +70,8 @@ class OpenStack(Account):
             key_name = key_name.split(".")[0]
             msd = MultiStepDeployment([key, steps])
 
+            self.logger.debug("Key name associated with node".format(key_name))
+
             node = self.node_driver.deploy_node(name=name,
                                                 size=size,
                                                 image=image,
@@ -83,13 +85,15 @@ class OpenStack(Account):
 
             if mon:
                 self.log_node(node, node_id, name, size, image, "OPENSTACK")
+                self.logger.info("Successfully added node to the instances db")
 
             return True
         except DeploymentError as e:
-            print(e)
+            self.logger.exception("Deployment failed could not connect to node, timeout error")
+            self.logger.exception(e)
             return False
         except IOError as e:
-            print(e)
+            self.logger.exception("Key file was unnaccessible and so failed to deploy node")
             return False
 
     def create_image(self, image_name, container_format, disk_format, image_location):

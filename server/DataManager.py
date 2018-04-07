@@ -178,8 +178,7 @@ class DataManager:
             size = provider.get_size(data["SIZE"])
             networks = provider.get_networks(data["NETWORKS"])
             security_groups = provider.get_security_groups(data["SECURITY_GROUPS"])
-            self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {}
-             security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, data["KEY_NAME"]))
+            self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {} security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, data["KEY_NAME"]))
 
             key_loc = "{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"], data["KEY_NAME"])
             if not os.path.isfile(key_loc):
