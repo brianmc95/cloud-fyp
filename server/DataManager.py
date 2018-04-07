@@ -129,6 +129,7 @@ class DataManager:
                 os.mkdir(key_dir)
             with open("{}/{}".format(key_dir, data["KEY_NAME"]), "w") as key_file:
                 key_file.write(data["KEY_VALUE"])
+                os.chmod("{}/{}".format(key_dir, data["KEY_NAME"]), 0o644)
                 self.logger.info("Key {} added for provider {}".format(data["KEY_NAME"], data["PROVIDER"]))
         except Exception as e:
             self.logger.exception("Could not add the key")
