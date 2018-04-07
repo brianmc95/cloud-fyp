@@ -169,28 +169,34 @@ class DataManager:
             return False
 
     def deploy(self, data):
-        provider = None
-        if data["PROVIDER"] == "aws":
-            provider = self.aws_prov
-        elif data["PROVIDER"] == "openstack":
-            provider = self.open_prov
-        if provider:
-            image = provider.get_image(data["IMAGE"])
-            size = provider.get_size(data["SIZE"])
-            networks = provider.get_networks(data["NETWORKS"])
-            security_groups = provider.get_security_groups(data["SECURITY_GROUPS"])
-            self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {} security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, data["KEY_NAME"]))
-            key_loc = "{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"], data["KEY_NAME"])
-            self.logger.info("key loc is {}".format(key_loc))
-            if not os.path.isfile(key_loc):
-                return False
-            if image and size:
-                status = provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True, key_loc)
-                if status:
-                    self.logger.info("Deployed node {} successfully".format(data["NAME"]))
-                    return True
-        self.logger.info("Unable to deploy node {}".format(data["NAME"]))
-        return False
+        try:
+            provider = None
+            if data["PROVIDER"] == "aws":
+                provider = self.aws_prov
+            elif data["PROVIDER"] == "openstack":
+                provider = self.open_prov
+            if provider:
+                image = provider.get_image(data["IMAGE"])
+                size = provider.get_size(data["SIZE"])
+                networks = provider.get_networks(data["NETWORKS"])
+                security_groups = provider.get_security_groups(data["SECURITY_GROUPS"])
+                self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {} security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, data["KEY_NAME"]))
+                key_loc = "{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"], data["KEY_NAME"])
+                self.logger.info("key loc is {}".format(key_loc))
+                if not os.path.isfile(key_loc):
+                    return False
+                self.logger.info("Valid key provided")
+                if image and size:
+                    self.logger.info("Size and image provided")
+                    status = provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True, key_loc)
+                    if status:
+                        self.logger.info("Deployed node {} successfully".format(data["NAME"]))
+                        return True
+            self.logger.info("Unable to deploy node {}".format(data["NAME"]))
+            return False
+        except Exception as e:
+            self.logger.exception("Something bad happened")
+            self.logger.exception(e)
 
     def deploy_options(self, data):
         result = {}
