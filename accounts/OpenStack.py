@@ -1,6 +1,6 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
-from libcloud.compute.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
+from libcloud.compute.deployment import ScriptDeployment
 from libcloud.compute.base import DeploymentError
 from keystoneauth1 import loading
 from keystoneauth1 import session
@@ -53,16 +53,11 @@ class OpenStack(Account):
         try:
             self.logger.info("Beginning the deployment of the instance")
             self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size, image, networks, security_groups, mon, key_loc))
-            # steps = []
 
-            # key_file = open(key_loc)
-            # key_content = key_file.read()
-            # key = SSHKeyDeployment(key_content)
             key_name = key_loc.split("/")[-1]
             key_name = key_name.split(".")[0]
 
-            # self.logger.debug("Key name associated with node {}".format(key_name))
-            # steps.append(key)
+            self.logger.debug("Key name associated with node {}".format(key_name))
 
             if mon:
                 config_file = open("config/manager-config.json")
@@ -74,11 +69,12 @@ class OpenStack(Account):
                 self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
                 linux_mon = open(self.linux_mon, "r")
                 monitor = ScriptDeployment(linux_mon.read(), args=mon_args)
-                # steps.append(monitor)
-
-            # msd = MultiStepDeployment(add=steps)
+                print(monitor.script)
 
             node = self.node_driver.deploy_node(name=name,
+                                                ssh_key="",
+                                                ssh_username="ubuntu",
+                                                ssh_alternate_usernames=["root", "ec2-user", "admin", "centos", "bitnami"],
                                                 size=size,
                                                 image=image,
                                                 networks=networks,
