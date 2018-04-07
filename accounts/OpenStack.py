@@ -1,6 +1,6 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
-from libcloud.compute.deployment import MultiStepDeployment, ScriptDeployment
+from libcloud.compute.deployment import MultiStepDeployment, ScriptDeployment, SSHKeyDeployment
 from libcloud.compute.base import DeploymentError
 from libcloud.compute.base import NodeAuthSSHKey
 from keystoneauth1 import loading
@@ -55,6 +55,15 @@ class OpenStack(Account):
             self.logger.info("Beginning the deployment of the instance")
             self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size, image, networks, security_groups, mon, key_loc))
             steps = []
+
+            key_file = open(key_loc)
+            key = SSHKeyDeployment(key_file.read())
+            key_name = key_loc.split("/")[-1]
+            key_name = key_name.split(".")[0]
+
+            self.logger.debug("Key name associated with node {}".format(key_name))
+            steps.append(key)
+
             if mon:
                 config_file = open("config/manager-config.json")
                 config_json = json.load(config_file)
@@ -63,25 +72,19 @@ class OpenStack(Account):
                 port = config_json["port"]
                 mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
                 self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
-                steps.append(ScriptDeployment(self.linux_mon, args=mon_args))
+                monitor = ScriptDeployment(self.linux_mon, args=mon_args)
+                steps.append(monitor)
             if script:
-                steps.append(ScriptDeployment(script))
-
-            key_file = open(key_loc)
-            key = NodeAuthSSHKey(key_file.read())
-            key_name = key_loc.split("/")[-1]
-            key_name = key_name.split(".")[0]
+                script_step = ScriptDeployment(script)
+                steps.append(script_step)
+                
             msd = MultiStepDeployment(steps)
-
-            self.logger.debug("Key name associated with node {}".format(key_name))
 
             node = self.node_driver.deploy_node(name=name,
                                                 size=size,
                                                 image=image,
                                                 networks=networks,
                                                 ex_security_groups=security_groups,
-                                                auth=key,
-                                                ssh_key=key_loc,
                                                 ex_keyname=key_name,
                                                 deploy=msd)
 
