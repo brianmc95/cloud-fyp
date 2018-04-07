@@ -4,8 +4,10 @@ from dashboard import index
 import json
 
 if __name__ == "__main__":
+
     try:
-        config = json.loads("config/manager-config.json")
+        file = open("config/manager-config.json")
+        config = json.load(file)
         ip = config["internal-ip"]
         port = config["port"]
         ssl = config["ssl-cert"]
@@ -16,5 +18,7 @@ if __name__ == "__main__":
         manager.start()
     except json.JSONDecodeError as e:
         print("ERROR: Could not load json file")
+    except IOError as e:
+        print("ERROR: Could not open json config file cloud-fyp/config/manager-config.json must be available")
 
 
