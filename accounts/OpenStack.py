@@ -49,13 +49,12 @@ class OpenStack(Account):
     def get_node_info(self, node_id):
         return self.node_driver.ex_get_node_details(node_id)
 
-    def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_loc):
+    def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_file_name):
         try:
             self.logger.info("Beginning the deployment of the instance")
-            self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size, image, networks, security_groups, mon, key_loc))
+            self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size, image, networks, security_groups, mon, key_file_name))
 
-            key_name = key_loc.split("/")[-1]
-            key_name = key_name.split(".")[0]
+            key_name = key_file_name.split(".")[0]
 
             self.logger.debug("Key name associated with node {}".format(key_name))
 
