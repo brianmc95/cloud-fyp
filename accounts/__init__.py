@@ -6,7 +6,7 @@ import json
 if path.isfile("logging/manager.log"):
     remove("logging/manager.log")
 
-with open("logging/manager.json", 'r') as logging_configuration_file:
+with open("logging/manager_server.json", 'r') as logging_configuration_file:
     config_dict = json.load(logging_configuration_file)
 
 logging.config.dictConfig(config_dict)
