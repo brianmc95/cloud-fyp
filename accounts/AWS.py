@@ -62,8 +62,7 @@ class AWS(Account):
                                                                                                          security_groups,
                                                                                                          key_loc))
 
-            key_name = key_loc.split("/")[-1]
-            key_name = key_name.split(".")[0]
+            key_name = key_loc.split(".")[0]
 
             self.logger.debug("Key name associated with node {}".format(key_name))
 
