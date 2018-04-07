@@ -2,8 +2,8 @@ import libcloud.compute.types as node_types
 import libcloud.compute.providers as node_providers
 import libcloud.storage.types as storage_types
 import libcloud.storage.providers as storage_providers
-from libcloud.compute.deployment import MultiStepDeployment, ScriptDeployment
-from libcloud.compute.base import NodeAuthSSHKey
+from libcloud.compute.deployment import ScriptDeployment
+from libcloud.compute.base import DeploymentError
 
 from accounts.Account import Account
 import json
@@ -52,36 +52,64 @@ class AWS(Account):
                                      subnet=networks,
                                      security_groups=security_groups)
 
-    def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_loc, script=None):
-        steps = []
-        if mon:
-            config_file = open("config/manager-config.json")
-            config_json = json.load(config_file)
-            node_id = self.gen_id()
-            ip = config_json["public-ip"]
-            port = config_json["port"]
-            mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
-            steps.append(ScriptDeployment(self.linux_mon, args=mon_args))
-        if script:
-            steps.append(ScriptDeployment(script))
+    def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_loc):
+        try:
+            self.logger.info("Beginning the deployment of the instance")
+            self.logger.info(
+                "name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size,
+                                                                                                         image,
+                                                                                                         networks,
+                                                                                                         security_groups,
+                                                                                                         mon, key_loc))
 
-        msd = MultiStepDeployment(steps)
+            key_name = key_loc.split("/")[-1]
+            key_name = key_name.split(".")[0]
 
-        key = NodeAuthSSHKey(key_file.read())
-        key_name = key_loc.split("/")[-1]
-        key_name = key_name.split(".")[0]
+            self.logger.debug("Key name associated with node {}".format(key_name))
 
-        node = self.node_driver.deploy_node(name=name,
-                                            size=size,
-                                            image=image,
-                                            networks=networks,
-                                            security_groups=security_groups,
-                                            ssh_key=key_loc,
-                                            ex_keyname=key_name,
-                                            deploy=msd)
+            if mon:
+                config_file = open("config/manager-config.json")
+                config_json = json.load(config_file)
+                node_id = self.gen_id()
+                ip = config_json["public-ip"]
+                port = config_json["port"]
+                mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
+                self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
+                linux_mon = open(self.linux_mon, "r")
+                monitor = ScriptDeployment(linux_mon.read(), args=mon_args)
 
-        if mon:
-            self.log_node(node, node_id, name, size, image, "AWS")
+            node = self.node_driver.deploy_node(name=name,
+                                                ssh_key="",
+                                                ssh_username="ubuntu",
+                                                ssh_alternate_usernames=["root", "ec2-user", "admin", "centos",
+                                                                         "bitnami"],
+                                                size=size,
+                                                image=image,
+                                                networks=networks,
+                                                ex_security_groups=security_groups,
+                                                ex_keyname=key_name,
+                                                deploy=monitor)
+
+            if mon:
+                self.log_node(node, node_id, name, size, image, "AWS")
+                self.logger.info("Successfully added node to the instances db")
+
+            return True
+        except DeploymentError as e:
+            self.logger.exception("Deployment failed could not connect to node, timeout error")
+            self.logger.exception(e)
+            return False
+        except IOError as e:
+            self.logger.exception("Key file was unnaccessible and so failed to deploy node")
+            return False
+        except json.JSONDecodeError as e:
+            self.logger.exception("Was unable to open json config file")
+            self.logger.exception(e)
+            return False
+        except Exception as e:
+            self.logger.exception("Something happened which wasn't good")
+            self.logger.exception(e)
+        return False
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:

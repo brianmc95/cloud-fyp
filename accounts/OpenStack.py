@@ -69,7 +69,6 @@ class OpenStack(Account):
                 self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
                 linux_mon = open(self.linux_mon, "r")
                 monitor = ScriptDeployment(linux_mon.read(), args=mon_args)
-                print(monitor.script)
 
             node = self.node_driver.deploy_node(name=name,
                                                 ssh_key="",
