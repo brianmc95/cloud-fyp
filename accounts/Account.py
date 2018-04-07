@@ -134,7 +134,7 @@ class Account:
         attempt = 0
         inUse = 0
         while True:
-            rand_id = "".join(random.choices(string.ascii_letters + string.digits, k=32))
+            rand_id = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(32))
             db = self.client["cloud-fyp"]
             collection = db["instances"]
             inUse = collection.count({'ASSIGNED_ID': rand_id})
