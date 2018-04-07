@@ -121,7 +121,10 @@ class DataManager:
 
     def add_key(self, data):
         try:
-            key_dir = "{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"])
+            key_dir = "{}/{}".format(self.__root_path, self.__keys_dir)
+            if not os.path.isdir(key_dir):
+                os.mkdir(key_dir)
+            key_dir = "{}/{}".format(key_dir, data["PROVIDER"])
             if not os.path.isdir(key_dir):
                 os.mkdir(key_dir)
             with open("{}/{}".format(key_dir, data["KEY_NAME"]), "w") as key_file:
