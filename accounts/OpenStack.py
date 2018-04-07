@@ -78,7 +78,7 @@ class OpenStack(Account):
                 script_step = ScriptFileDeployment(script)
                 steps.append(script_step)
 
-            msd = MultiStepDeployment(steps)
+            msd = MultiStepDeployment(add=steps)
 
             node = self.node_driver.deploy_node(name=name,
                                                 size=size,
@@ -86,6 +86,7 @@ class OpenStack(Account):
                                                 networks=networks,
                                                 ex_security_groups=security_groups,
                                                 ex_keyname=key_name,
+                                                ssh_username="ubuntu",
                                                 deploy=msd)
 
             if mon:
