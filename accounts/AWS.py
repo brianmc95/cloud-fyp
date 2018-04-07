@@ -55,12 +55,12 @@ class AWS(Account):
     def deploy_node_script(self, name, size, image, networks, security_groups, key_loc):
         try:
             self.logger.info("Beginning the deployment of the instance")
-            self.logger.info(
-                "name {}, size {}, image {}, networks {}, security_groups {}, key_loc {}".format(name, size,
-                                                                                                         image,
-                                                                                                         networks,
-                                                                                                         security_groups,
-                                                                                                         key_loc))
+            self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, key_loc {}".format(name,
+                                                                                                              size,
+                                                                                                              image,
+                                                                                                              networks,
+                                                                                                              security_groups,
+                                                                                                              key_loc))
 
             key_name = key_loc.split(".")[0]
 
