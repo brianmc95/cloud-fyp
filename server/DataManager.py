@@ -121,10 +121,10 @@ class DataManager:
 
     def add_key(self, data):
         try:
-            with open("{}/{}/{}/{}".format(self.__root_path,
-                                           self.__keys_dir,
-                                           data["PROVIDER"],
-                                           data["KEY_NAME"]), "w") as key_file:
+            key_dir = "{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"])
+            if not os.path.isdir(key_dir):
+                os.mkdir(key_dir)
+            with open("{}/{}".format(key_dir, data["KEY_NAME"]), "w") as key_file:
                 key_file.write(data["KEY_VALUE"])
                 self.logger.info("Key {} added for provider {}".format(data["KEY_NAME"], data["PROVIDER"]))
         except Exception as e:
