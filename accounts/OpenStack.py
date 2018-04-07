@@ -83,8 +83,7 @@ class OpenStack(Account):
                                                 auth=key,
                                                 ssh_key=key_loc,
                                                 ex_keyname=key_name,
-                                                deploy=msd,
-                                                timeout=180)
+                                                deploy=msd)
 
             if mon:
                 self.log_node(node, node_id, name, size, image, "OPENSTACK")
@@ -102,6 +101,10 @@ class OpenStack(Account):
             self.logger.exception("Was unable to open json config file")
             self.logger.exception(e)
             return False
+        except Exception as e:
+            self.logger.exception("Something happened which wasn't good")
+            self.logger.exception(e)
+        return False
 
     def create_image(self, image_name, container_format, disk_format, image_location):
         image = self.glance.images.create(name=image_name, container_format=container_format, disk_format=disk_format)
