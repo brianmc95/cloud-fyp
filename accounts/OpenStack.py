@@ -53,16 +53,16 @@ class OpenStack(Account):
         try:
             self.logger.info("Beginning the deployment of the instance")
             self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size, image, networks, security_groups, mon, key_loc))
-            steps = []
+            # steps = []
 
-            key_file = open(key_loc)
-            key_content = key_file.read()
-            key = SSHKeyDeployment(key_content)
+            # key_file = open(key_loc)
+            # key_content = key_file.read()
+            # key = SSHKeyDeployment(key_content)
             key_name = key_loc.split("/")[-1]
             key_name = key_name.split(".")[0]
 
-            self.logger.debug("Key name associated with node {}".format(key_name))
-            steps.append(key)
+            # self.logger.debug("Key name associated with node {}".format(key_name))
+            # steps.append(key)
 
             if mon:
                 config_file = open("config/manager-config.json")
@@ -74,9 +74,9 @@ class OpenStack(Account):
                 self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
                 linux_mon = open(self.linux_mon, "r")
                 monitor = ScriptDeployment(linux_mon.read(), args=mon_args)
-                steps.append(monitor)
+                # steps.append(monitor)
 
-            msd = MultiStepDeployment(add=steps)
+            # msd = MultiStepDeployment(add=steps)
 
             node = self.node_driver.deploy_node(name=name,
                                                 size=size,
@@ -84,8 +84,7 @@ class OpenStack(Account):
                                                 networks=networks,
                                                 ex_security_groups=security_groups,
                                                 ex_keyname=key_name,
-                                                ssh_username="ubuntu",
-                                                deploy=msd)
+                                                deploy=monitor)
 
             if mon:
                 self.log_node(node, node_id, name, size, image, "OPENSTACK")
