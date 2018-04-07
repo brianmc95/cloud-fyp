@@ -2,7 +2,7 @@ import libcloud.compute.types as node_types
 import libcloud.compute.providers as node_providers
 import libcloud.storage.types as storage_types
 import libcloud.storage.providers as storage_providers
-from libcloud.compute.deployment import ScriptDeployment
+from libcloud.compute.deployment import ScriptFileDeployment
 from libcloud.compute.base import DeploymentError
 
 from accounts.Account import Account
@@ -75,8 +75,7 @@ class AWS(Account):
                 port = config_json["port"]
                 mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
                 self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
-                linux_mon = open(self.linux_mon, "r")
-                monitor = ScriptDeployment(linux_mon.read(), args=mon_args)
+                monitor = ScriptFileDeployment(self.linux_mon, args=mon_args)
 
             node = self.node_driver.deploy_node(name=name,
                                                 ssh_key="",
