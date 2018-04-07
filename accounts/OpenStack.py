@@ -61,6 +61,7 @@ class OpenStack(Account):
                 ip = config_json["public-ip"]
                 port = config_json["port"]
                 mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
+                self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
                 steps.append(ScriptDeployment(self.linux_mon, args=mon_args))
             if script:
                 steps.append(ScriptDeployment(script))
@@ -95,6 +96,10 @@ class OpenStack(Account):
             return False
         except IOError as e:
             self.logger.exception("Key file was unnaccessible and so failed to deploy node")
+            return False
+        except json.JSONDecodeError as e:
+            self.logger.exception("Was unable to open json config file")
+            self.logger.exception(e)
             return False
 
     def create_image(self, image_name, container_format, disk_format, image_location):
