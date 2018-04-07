@@ -188,7 +188,7 @@ class DataManager:
                 self.logger.info("Valid key provided")
                 if image and size:
                     self.logger.info("Size and image provided")
-                    status = provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True, key_loc)
+                    status = provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, key_loc)
                     if status:
                         self.logger.info("Deployed node {} successfully".format(data["NAME"]))
                         return True
