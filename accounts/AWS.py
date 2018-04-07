@@ -52,36 +52,31 @@ class AWS(Account):
                                      subnet=networks,
                                      security_groups=security_groups)
 
-    def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_loc):
+    def deploy_node_script(self, name, size, image, networks, security_groups, key_loc):
         try:
             self.logger.info("Beginning the deployment of the instance")
             self.logger.info(
-                "name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size,
+                "name {}, size {}, image {}, networks {}, security_groups {}, key_loc {}".format(name, size,
                                                                                                          image,
                                                                                                          networks,
                                                                                                          security_groups,
-                                                                                                         mon, key_loc))
+                                                                                                         key_loc))
 
             key_name = key_loc.split("/")[-1]
             key_name = key_name.split(".")[0]
 
             self.logger.debug("Key name associated with node {}".format(key_name))
 
-            if mon:
-                config_file = open("config/manager-config.json")
-                config_json = json.load(config_file)
-                node_id = self.gen_id()
-                ip = config_json["public-ip"]
-                port = config_json["port"]
-                mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
-                self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
-                monitor = ScriptFileDeployment(self.linux_mon, args=mon_args)
+            config_file = open("config/manager-config.json")
+            config_json = json.load(config_file)
+            node_id = self.gen_id()
+            ip = config_json["public-ip"]
+            port = config_json["port"]
+            mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
+            self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
+            monitor = ScriptFileDeployment(self.linux_mon, args=mon_args)
 
             node = self.node_driver.deploy_node(name=name,
-                                                ssh_key="",
-                                                ssh_username="ubuntu",
-                                                ssh_alternate_usernames=["root", "ec2-user", "admin", "centos",
-                                                                         "bitnami"],
                                                 size=size,
                                                 image=image,
                                                 networks=networks,
@@ -89,11 +84,10 @@ class AWS(Account):
                                                 ex_keyname=key_name,
                                                 deploy=monitor)
 
-            if mon:
-                self.log_node(node, node_id, name, size, image, "AWS")
-                self.logger.info("Successfully added node to the instances db")
-
+            self.log_node(node, node_id, name, size, image, "AWS")
+            self.logger.info("Successfully added node to the instances db")
             return True
+
         except DeploymentError as e:
             self.logger.exception("Deployment failed could not connect to node, timeout error")
             self.logger.exception(e)

@@ -71,9 +71,6 @@ class OpenStack(Account):
                 monitor = ScriptDeployment(linux_mon.read(), args=mon_args)
 
             node = self.node_driver.deploy_node(name=name,
-                                                ssh_key="",
-                                                ssh_username="ubuntu",
-                                                ssh_alternate_usernames=["root", "ec2-user", "admin", "centos", "bitnami"],
                                                 size=size,
                                                 image=image,
                                                 networks=networks,
