@@ -71,7 +71,7 @@ class OpenStack(Account):
             key = NodeAuthSSHKey(key_file.read())
             key_name = key_loc.split("/")[-1]
             key_name = key_name.split(".")[0]
-            msd = MultiStepDeployment([key, steps])
+            msd = MultiStepDeployment(steps)
 
             self.logger.debug("Key name associated with node {}".format(key_name))
 
