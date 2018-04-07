@@ -52,20 +52,15 @@ class AWS(Account):
                                      subnet=networks,
                                      security_groups=security_groups)
 
-    def deploy_node_script(self, name, size, image, networks, security_groups, key_loc):
+    def deploy_node_script(self, name, size, image, networks, security_groups, key_name):
         try:
             self.logger.info("Beginning the deployment of the instance")
-            self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, key_loc {}".format(name,
+            self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, key name {}".format(name,
                                                                                                               size,
                                                                                                               image,
                                                                                                               networks,
                                                                                                               security_groups,
-                                                                                                              key_loc))
-
-            key_name = key_loc.split(".")[0]
-
-            self.logger.debug("Key name associated with node {}".format(key_name))
-
+                                                                                                              key_name))
             config_file = open("config/manager-config.json")
             config_json = json.load(config_file)
             node_id = self.gen_id()

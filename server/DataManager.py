@@ -180,15 +180,14 @@ class DataManager:
                 size = provider.get_size(data["SIZE"])
                 networks = provider.get_networks(data["NETWORKS"])
                 security_groups = provider.get_security_groups(data["SECURITY_GROUPS"])
-                self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {} security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, data["KEY_NAME"]))
-                key_loc = "{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"], data["KEY_NAME"])
-                self.logger.info("key loc is {}".format(key_loc))
-                if not os.path.isfile(key_loc):
-                    return False
-                self.logger.info("Valid key provided")
+                if ".pem" in data["KEY_NAME"]:
+                    key_name = data["KEY_NAME"].split(".")[0]
+                else:
+                    key_name = data["KEY_NAME"]
+                self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {} security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, key_name))
                 if image and size:
                     self.logger.info("Size and image provided")
-                    status = provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, key_loc)
+                    status = provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, key_name)
                     if status:
                         self.logger.info("Deployed node {} successfully".format(data["NAME"]))
                         return True
