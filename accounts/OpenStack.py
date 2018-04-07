@@ -1,6 +1,8 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
 from libcloud.compute.deployment import MultiStepDeployment, ScriptDeployment
+from libcloud.compute.base import DeploymentError
+from libcloud.compute.base import NodeAuthSSHKey
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from glanceclient import Client
@@ -49,30 +51,46 @@ class OpenStack(Account):
         return self.node_driver.ex_get_node_details(node_id)
 
     def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_loc, script=None):
-        steps = []
-        if mon:
-            config_file = open("config/manager-config.json")
-            config_json = json.load(config_file)
-            node_id = self.gen_id()
-            ip = config_json["public-ip"]
-            port = config_json["port"]
-            mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
-            steps.append(ScriptDeployment(self.linux_mon, args=mon_args))
-        if script:
-            steps.append(ScriptDeployment(script))
+        try:
+            steps = []
+            if mon:
+                config_file = open("config/manager-config.json")
+                config_json = json.load(config_file)
+                node_id = self.gen_id()
+                ip = config_json["public-ip"]
+                port = config_json["port"]
+                mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
+                steps.append(ScriptDeployment(self.linux_mon, args=mon_args))
+            if script:
+                steps.append(ScriptDeployment(script))
 
-        msd = MultiStepDeployment(steps)
+            key_file = open(key_loc)
+            key = NodeAuthSSHKey(key_file.read())
+            key_name = key_loc.split("/")[-1]
+            key_name = key_name.split(".")[0]
+            msd = MultiStepDeployment([key, steps])
 
-        node = self.node_driver.deploy_node(name=name,
-                                            size=size,
-                                            image=image,
-                                            networks=networks,
-                                            security_groups=security_groups,
-                                            ssh_key=key_loc,
-                                            deploy=msd)
+            node = self.node_driver.deploy_node(name=name,
+                                                size=size,
+                                                image=image,
+                                                networks=networks,
+                                                ex_security_groups=security_groups,
+                                                auth=key,
+                                                ssh_key=key_loc,
+                                                ex_keyname=key_name,
+                                                deploy=msd,
+                                                timeout=180)
 
-        if mon:
-            self.log_node(node, node_id, name, size, image, "OPENSTACK")
+            if mon:
+                self.log_node(node, node_id, name, size, image, "OPENSTACK")
+
+            return True
+        except DeploymentError as e:
+            print(e)
+            return False
+        except IOError as e:
+            print(e)
+            return False
 
     def create_image(self, image_name, container_format, disk_format, image_location):
         image = self.glance.images.create(name=image_name, container_format=container_format, disk_format=disk_format)

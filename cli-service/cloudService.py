@@ -210,7 +210,8 @@ def key_management(config, provider, keyname, keylocation, download, upload, lis
             payload["OPERATION"] = "UPLOAD"
             upload_url = "http://{}:{}/key/".format(config.manager_ip, config.manager_port)
             with open(keylocation) as keyfile:
-                payload["KEY_NAME"] = keyfile.name
+                keyname = keyfile.name.split("/")[-1]
+                payload["KEY_NAME"] = keyname
                 payload["KEY_VALUE"] = keyfile.read()
             r = requests.post(upload_url, data=json.dumps(payload))
             if r.status_code == 200:

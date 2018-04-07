@@ -178,14 +178,14 @@ class DataManager:
             self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {}
              security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, data["KEY_NAME"]))
 
-            os.listdir("{}/{}/{}/".format(self.__root_path, self.__keys_dir, provider))
             key_loc = "{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"], data["KEY_NAME"])
             if not os.path.isfile(key_loc):
                 return False
             if image and size:
-                provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True, key_loc)
-                self.logger.info("Deployed node {} successfully".format(data["NAME"]))
-                return True
+                status = provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True, key_loc)
+                if status:
+                    self.logger.info("Deployed node {} successfully".format(data["NAME"]))
+                    return True
         self.logger.info("Unable to deploy node {}".format(data["NAME"]))
         return False
 

@@ -3,6 +3,7 @@ import libcloud.compute.providers as node_providers
 import libcloud.storage.types as storage_types
 import libcloud.storage.providers as storage_providers
 from libcloud.compute.deployment import MultiStepDeployment, ScriptDeployment
+from libcloud.compute.base import NodeAuthSSHKey
 
 from accounts.Account import Account
 import json
@@ -66,12 +67,17 @@ class AWS(Account):
 
         msd = MultiStepDeployment(steps)
 
+        key = NodeAuthSSHKey(key_file.read())
+        key_name = key_loc.split("/")[-1]
+        key_name = key_name.split(".")[0]
+
         node = self.node_driver.deploy_node(name=name,
                                             size=size,
                                             image=image,
                                             networks=networks,
                                             security_groups=security_groups,
                                             ssh_key=key_loc,
+                                            ex_keyname=key_name,
                                             deploy=msd)
 
         if mon:
