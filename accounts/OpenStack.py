@@ -73,7 +73,7 @@ class OpenStack(Account):
             key_name = key_name.split(".")[0]
             msd = MultiStepDeployment([key, steps])
 
-            self.logger.debug("Key name associated with node".format(key_name))
+            self.logger.debug("Key name associated with node {}".format(key_name))
 
             node = self.node_driver.deploy_node(name=name,
                                                 size=size,
