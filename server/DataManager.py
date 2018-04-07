@@ -176,9 +176,14 @@ class DataManager:
             networks = provider.get_networks(data["NETWORKS"])
             security_groups = provider.get_security_groups(data["SECURITY_GROUPS"])
             self.logger.info("""Deploying node for provider {} with the following options: Image {} size {} networks {}
-             security groups {}""".format(data["PROVIDER"], image, size, networks, security_groups))
+             security groups {} and key {}""".format(data["PROVIDER"], image, size, networks, security_groups, data["KEY_NAME"]))
+
+            os.listdir("{}/{}/{}/".format(self.__root_path, self.__keys_dir, provider))
+            key_loc = "{}/{}/{}/{}".format(self.__root_path, self.__keys_dir, data["PROVIDER"], data["KEY_NAME"])
+            if not os.path.isfile(key_loc):
+                return False
             if image and size:
-                provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True)
+                provider.deploy_node_script(data["NAME"], size, image, networks, security_groups, True, key_loc)
                 self.logger.info("Deployed node {} successfully".format(data["NAME"]))
                 return True
         self.logger.info("Unable to deploy node {}".format(data["NAME"]))

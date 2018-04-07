@@ -27,7 +27,7 @@ class Account:
         self.db = self.client["cloud-fyp"]
         self.inst_info = self.db["instances"]
         self.vols = self.db["volumes"]
-        self.__linux_mon = "{}/monitoring/utilities/linux_mon_diploy.sh".format(self.__get_root_path())
+        self.linux_mon = "{}/monitoring/utilities/linux_mon_diploy.sh".format(self.__get_root_path())
 
     def __get_root_path(self):
         full_path = os.getcwd()

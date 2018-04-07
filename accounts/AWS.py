@@ -10,7 +10,7 @@ import json
 
 class AWS(Account):
 
-    def __init__(self, access_id="", secret_key="", region="",):
+    def __init__(self, access_id="", secret_key="", region="", ):
         super().__init__()
         self.region = region
         self.ec2cls = node_providers.get_driver(node_types.Provider.EC2)
@@ -46,12 +46,12 @@ class AWS(Account):
 
     def create_node(self, name, size, image, networks, security_groups):
         self.node_driver.create_node(name=name,
-                                size=size,
-                                image=image,
-                                subnet=networks,
-                                security_groups=security_groups)
+                                     size=size,
+                                     image=image,
+                                     subnet=networks,
+                                     security_groups=security_groups)
 
-    def deploy_node_script(self, name, size, image, networks, security_groups, mon, script=None):
+    def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_loc, script=None):
         steps = []
         if mon:
             config_file = open("config/manager-config.json")
@@ -60,18 +60,19 @@ class AWS(Account):
             ip = config_json["public-ip"]
             port = config_json["port"]
             mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
-            steps.append(ScriptDeployment(self.__linux_mon, args=mon_args))
+            steps.append(ScriptDeployment(self.linux_mon, args=mon_args))
         if script:
             steps.append(ScriptDeployment(script))
 
         msd = MultiStepDeployment(steps)
 
         node = self.node_driver.deploy_node(name=name,
-                                       size=size,
-                                       image=image,
-                                       networks=networks,
-                                       security_groups=security_groups,
-                                       deploy=msd)
+                                            size=size,
+                                            image=image,
+                                            networks=networks,
+                                            security_groups=security_groups,
+                                            ssh_key=key_loc,
+                                            deploy=msd)
 
         if mon:
             self.log_node(node, node_id, name, size, image, "AWS")
@@ -102,4 +103,3 @@ class AWS(Account):
         for zone in self.node_driver.ex_list_availability_zones():
             if zone.name == zone_name:
                 return zone
-

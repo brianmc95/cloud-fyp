@@ -33,28 +33,40 @@ def cli(config, verbose, ip, port):
 @click.option("--size", "-s", help="SizeID of size you wish to deploy the node with")
 @click.option("--networks", "-nt", multiple=True, help="ID of networks required for deployed node")
 @click.option("--securityGroups", "-sg", multiple=True, help="ID of security groups to add to the deployed node")
+@click.option("--keyName", "-k", help="Name of keypair with which you will access the node")
 @pass_config
-def deploy(config, name, provider, image, size, networks, securitygroups):
+def deploy(config, name, provider, image, size, networks, securitygroups, keyname):
     """
     Allows for the deployment of instances to a specified provider with specified options.
     For AWS networks, use the network name, in all other cases use the id associated with that variable
     """
-    payload = {"NAME": name,
-               "PROVIDER": provider,
-               "IMAGE": image,
-               "SIZE": size,
-               "NETWORKS": networks,
-               "SECURITY_GROUPS": securitygroups}
-    r = requests.post("http://{}:{}/deploy/".format(config.manager_ip, config.manager_port), json=json.dumps(payload))
+    try:
+        payload = {"NAME": name,
+                   "PROVIDER": provider,
+                   "IMAGE": image,
+                   "SIZE": size,
+                   "NETWORKS": networks,
+                   "SECURITY_GROUPS": securitygroups,
+                   "KEY_NAME": keyname}
+        set_url = "http://{}:{}/deploy/".format(config.manager_ip, config.manager_port)
+        r = requests.post(set_url, data=json.dumps(payload))
 
-    if r.status_code == 200:
-        response = r.content
-        click.echo(response)
-        click.echo("Node: {} successfully deployed".format(name))
-        return 0
-    else:
-        click.echo("Node: {} was not able to be deployed".format(name))
-        return 1
+        if r.status_code == 200:
+            response = r.content
+            click.echo(response)
+            click.echo("Node: {} successfully deployed".format(name))
+            return 0
+        else:
+            click.echo("Node: {} was not able to be deployed".format(name))
+            return 1
+    except requests.exceptions.HTTPError as errh:
+        click.echo("Http Error: {}".format(errh))
+    except requests.exceptions.ConnectionError as errc:
+        click.echo("Error Connecting: {}".format(errc))
+    except requests.exceptions.Timeout as errt:
+        click.echo("Timeout Error: {}".format(errt))
+    except requests.exceptions.RequestException as err:
+        click.echo("ERROR: {}".format(err))
 
 @cli.command()
 @click.option("--provider", "-pr", type=click.Choice(["aws", "openstack"]), help="Provider you wish to interact with")
@@ -65,19 +77,29 @@ def delete_node(config, provider, name, nodeid):
     """
     Allows for the deletion of a node of a particular provider.
     """
-    payload = {"NODE_NAME": name,
-               "PROVIDER": provider,
-               "NODE_ID": nodeid}
-    r = requests.post("http://{}:{}/delete-node/".format(config.manager_ip, config.manager_port), json=json.dumps(payload))
+    try:
+        payload = {"NODE_NAME": name,
+                   "PROVIDER": provider,
+                   "NODE_ID": nodeid}
+        set_url = "http://{}:{}/delete-node/".format(config.manager_ip, config.manager_port)
+        r = requests.post(set_url, json=json.dumps(payload))
 
-    if r.status_code == 200:
-        response = r.content
-        click.echo(response)
-        click.echo("Node: {} successfully delted".format(name))
-        return 0
-    else:
-        click.echo("Node: {} was not able to be deleted".format(name))
-        return 1
+        if r.status_code == 200:
+            response = r.content
+            click.echo(response)
+            click.echo("Node: {} successfully delted".format(name))
+            return 0
+        else:
+            click.echo("Node: {} was not able to be deleted".format(name))
+            return 1
+    except requests.exceptions.HTTPError as errh:
+        click.echo("Http Error: {}".format(errh))
+    except requests.exceptions.ConnectionError as errc:
+        click.echo("Error Connecting: {}".format(errc))
+    except requests.exceptions.Timeout as errt:
+        click.echo("Timeout Error: {}".format(errt))
+    except requests.exceptions.RequestException as err:
+        click.echo("ERROR: {}".format(err))
 
 @cli.command()
 @click.option("--provider", "-pr", type=click.Choice(["aws", "openstack"]), help="Provider you wish to interact with")
@@ -96,7 +118,8 @@ def deploy_options(config, provider, images, sizes, networks, securitygroups):
                    "SIZES": sizes,
                    "NETWORKS": networks,
                    "SECURITY_GROUPS": securitygroups}
-        r = requests.post("http://{}:{}/deploy-options/".format(config.manager_ip, config.manager_port), data=json.dumps(payload))
+        set_url = "http://{}:{}/deploy-options/".format(config.manager_ip, config.manager_port)
+        r = requests.post(set_url, data=json.dumps(payload))
 
         if r.status_code == 200:
             click.echo(r.json())
