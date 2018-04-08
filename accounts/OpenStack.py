@@ -5,6 +5,8 @@ from libcloud.compute.base import DeploymentError
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from glanceclient import Client
+import paramiko
+import datetime
 
 from accounts.Account import Account
 import json
@@ -37,66 +39,116 @@ class OpenStack(Account):
         return self.node_driver.ex_list_security_groups()
 
     def create_node(self, name, size, image, networks, security_groups, key_name):
-        # Instantiate the Nova instance.
         node = self.node_driver.create_node(name=name,
                                             size=size,
                                             image=image,
-                                            networks=networks,
-                                            security_groups=security_groups,
+                                            subnet=networks,
+                                            ex_security_groups=security_groups,
                                             ex_keyname=key_name)
-        return node
+
+        self.log_node(node, name, size, image, "openstack")
+        self.logger.info("Successfully added node to the instances db")
+        key_loc = self.dm.get_key("aws", key_name)
+        self.deploy_monitor(node, key_loc, False)
+
+    def deploy_monitor(self, node, key_loc, log):
+        if log:
+            self.log_node(node, node.name, node.extra["instance_type"], node.extra["image_id"], "openstack")
+
+        start_time = datetime.datetime.now()
+        current_time = datetime.datetime.now()
+        ssh_names = ["ubuntu", "root", "ec2-user", "bitnami", "centos", "admin", "fedora"]
+        current_pos = 0
+        config_file = open("config/manager-config.json")
+        config_json = json.load(config_file)
+        ip = config_json["public-ip"]
+        port = config_json["port"]
+        git_install = False
+        pip_install = False
+        repo_clone = False
+        script_run = False
+        fails = 0
+        while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(
+                minutes=8) and fails < 5 and not script_run:
+            node = self.get_node(id=node.id)
+            self.logger.info("FAILS: {}".format(fails))
+            self.logger.info("GIT INSTALLED: {}".format(git_install))
+            self.logger.info("PIP INSTALLED: {}".format(pip_install))
+            self.logger.info("REPO CLONED: {}".format(repo_clone))
+            self.logger.info("MONITORIN DEPLOYED: {}".format(script_run))
+            if node.state == "running":
+                try:
+                    client = paramiko.SSHClient()
+                    client.load_system_host_keys()
+                    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    key = paramiko.RSAKey.from_private_key_file(key_loc)
+                    self.logger.debug(node.public_ips[0])
+                    self.logger.debug(ssh_names[current_pos])
+                    self.logger.info("Setting up SSH session")
+                    client.connect(node.public_ips[0], username=ssh_names[current_pos], pkey=key, timeout=180)
+                    if not git_install:
+                        self.logger.info("Preparing to install git")
+                        transport = client.get_transport().open_session()
+                        transport.exec_command("sudo apt install git -y")
+                        if transport.recv_exit_status() > 1:
+                            self.logger.info("Failed to install git")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Git successfully installed")
+                            git_install = True
+                    if not pip_install and git_install:
+                        self.logger.info("Preparing to install pip")
+                        transport = client.get_transport().open_session()
+                        transport.exec_command("sudo apt install python3-pip -y")
+                        if transport.recv_exit_status() > 1:
+                            self.logger.info("Failed to install Pip")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Pip successfully installed")
+                            pip_install = True
+                    if not repo_clone and pip_install:
+                        self.logger.info("Preparing to clone repo")
+                        transport = client.get_transport().open_session()
+                        self.logger.info("cloning repo")
+                        transport.exec_command("git clone https://github.com/brianmc95/cloud-fyp.git")
+                        if transport.recv_exit_status() > 1:
+                            self.logger.ingo("Failed to clone repo")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Repo successfully cloned")
+                            repo_clone = True
+                    if not script_run and repo_clone:
+                        transport = client.get_transport().open_session()
+                        self.logger.info("Deploying monitoring script")
+                        transport.exec_command(
+                            "/cloud-fyp/monitoring/utilities/linux_mon_deploy.sh -ip {} -p {} -id {} -pv {}".format(ip,
+                                                                                                                    port,
+                                                                                                                    node.id,
+                                                                                                                    "aws"))
+                        if transport.recv_exit_status() > 1:
+                            self.logger.ingo("Failed to deploy script")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Repo successfully deployed script")
+                            script_run = True
+
+                except paramiko.AuthenticationException as e:
+                    self.logger.info(e)
+                    self.logger.info("Incorrect username used trying another one.")
+                    current_pos += 1
+                    continue
+
+                except paramiko.SSHException as e:
+                    self.logger.info(e)
+                    self.logger.info("Issue with ssh client failed to deploy")
+                    break
 
     def get_node_info(self, node_id):
         return self.node_driver.ex_get_node_details(node_id)
-
-    def deploy_node_script(self, name, size, image, networks, security_groups, mon, key_file_name):
-        try:
-            self.logger.info("Beginning the deployment of the instance")
-            self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, mon {}, key_loc {}".format(name, size, image, networks, security_groups, mon, key_file_name))
-
-            key_name = key_file_name.split(".")[0]
-
-            self.logger.debug("Key name associated with node {}".format(key_name))
-
-            if mon:
-                config_file = open("config/manager-config.json")
-                config_json = json.load(config_file)
-                node_id = self.gen_id()
-                ip = config_json["public-ip"]
-                port = config_json["port"]
-                mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
-                self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
-                linux_mon = open(self.linux_mon, "r")
-                monitor = ScriptDeployment(linux_mon.read(), args=mon_args)
-
-            node = self.node_driver.deploy_node(name=name,
-                                                size=size,
-                                                image=image,
-                                                networks=networks,
-                                                ex_security_groups=security_groups,
-                                                ex_keyname=key_name,
-                                                deploy=monitor)
-
-            if mon:
-                self.log_node(node, node_id, name, size, image, "OPENSTACK")
-                self.logger.info("Successfully added node to the instances db")
-
-            return True
-        except DeploymentError as e:
-            self.logger.exception("Deployment failed could not connect to node, timeout error")
-            self.logger.exception(e)
-            return False
-        except IOError as e:
-            self.logger.exception("Key file was unnaccessible and so failed to deploy node")
-            return False
-        except json.JSONDecodeError as e:
-            self.logger.exception("Was unable to open json config file")
-            self.logger.exception(e)
-            return False
-        except Exception as e:
-            self.logger.exception("Something happened which wasn't good")
-            self.logger.exception(e)
-        return False
 
     def create_image(self, image_name, container_format, disk_format, image_location):
         image = self.glance.images.create(name=image_name, container_format=container_format, disk_format=disk_format)

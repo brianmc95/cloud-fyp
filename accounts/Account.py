@@ -11,12 +11,12 @@ from libcloud.compute.base import NodeDriver
 from libcloud.storage.base import StorageDriver
 from pymongo import MongoClient
 import pymongo.errors
-import string
 import datetime
 import os
 import random
 from retrying import retry
 import logging
+from server.DataManager import DataManager
 
 
 class Account:
@@ -31,6 +31,7 @@ class Account:
         self.inst_info = self.db["instances"]
         self.vols = self.db["volumes"]
         self.linux_mon = "{}/monitoring/utilities/linux_mon_diploy.sh".format(self.__get_root_path())
+        self.dm = DataManager()
 
     def __get_root_path(self):
         full_path = os.getcwd()

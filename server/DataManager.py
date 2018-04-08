@@ -142,6 +142,10 @@ class DataManager:
             return os.listdir("{}/{}/{}/".format(self.__root_path, self.__keys_dir, provider))
         return []
 
+    def get_key(self, provider, key_name):
+        if provider == "aws" or provider == "openstack":
+            return "{}/{}/{}/{}.pem".format(self.__root_path, self.__keys_dir, provider, key_name)
+
     def download_key(self, provider, key_name):
         try:
             result = {

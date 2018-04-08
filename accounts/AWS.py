@@ -2,10 +2,8 @@ import libcloud.compute.types as node_types
 import libcloud.compute.providers as node_providers
 import libcloud.storage.types as storage_types
 import libcloud.storage.providers as storage_providers
-from libcloud.compute.deployment import ScriptFileDeployment
-from libcloud.compute.base import DeploymentError
-import paramiko
 import datetime
+import paramiko
 
 from accounts.Account import Account
 import json
@@ -47,7 +45,7 @@ class AWS(Account):
     def availability_zones(self):
         return self.node_driver.ex_list_availability_zones()
 
-    def create_node(self, name, size, image, networks, security_groups, key_name, key_loc):
+    def create_node(self, name, size, image, networks, security_groups, key_name):
         node = self.node_driver.create_node(name=name,
                                             size=size,
                                             image=image,
@@ -55,26 +53,106 @@ class AWS(Account):
                                             ex_security_groups=security_groups,
                                             ex_keyname=key_name)
 
-        self.log_node(node, name, size, image, "AWS")
+        self.log_node(node, name, size, image, "aws")
         self.logger.info("Successfully added node to the instances db")
+        key_loc = self.dm.get_key("aws", key_name)
+        self.deploy_monitor(node, key_loc, False)
 
-        try:
-            start_time = datetime.datetime.now()
-            current_time = datetime.datetime.now()
-            ssh_names = ["ubuntu", "root", "ec2-user", "bitnami", "centos", "admin", "fedora"]
-            current_pos = 0
-            while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(minutes=8):
-                node = self.get_node(id=node.id)
-                if node.state == "running":
+    def deploy_monitor(self, node, key_loc, log):
+        if log:
+            self.log_node(node, node.name, node.extra["instance_type"], node.extra["image_id"], "aws")
+
+        start_time = datetime.datetime.now()
+        current_time = datetime.datetime.now()
+        ssh_names = ["ubuntu", "root", "ec2-user", "bitnami", "centos", "admin", "fedora"]
+        current_pos = 0
+        config_file = open("config/manager-config.json")
+        config_json = json.load(config_file)
+        ip = config_json["public-ip"]
+        port = config_json["port"]
+        git_install = False
+        pip_install = False
+        repo_clone = False
+        script_run = False
+        fails = 0
+        while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(
+                minutes=8) and fails < 5 and not script_run:
+            node = self.get_node(id=node.id)
+            self.logger.info("FAILS: {}".format(fails))
+            self.logger.info("GIT INSTALLED: {}".format(git_install))
+            self.logger.info("PIP INSTALLED: {}".format(pip_install))
+            self.logger.info("REPO CLONED: {}".format(repo_clone))
+            self.logger.info("MONITORIN DEPLOYED: {}".format(script_run))
+            if node.state == "running":
+                try:
                     client = paramiko.SSHClient()
                     client.load_system_host_keys()
                     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                     key = paramiko.RSAKey.from_private_key_file(key_loc)
-                    connection = client.connect(node.public_ips[0], username=ssh_names[current_pos], pkey=key)
+                    self.logger.debug(node.public_ips[0])
+                    self.logger.debug(ssh_names[current_pos])
+                    self.logger.info("Setting up SSH session")
+                    client.connect(node.public_ips[0], username=ssh_names[current_pos], pkey=key, timeout=180)
+                    if not git_install:
+                        self.logger.info("Preparing to install git")
+                        transport = client.get_transport().open_session()
+                        transport.exec_command("sudo apt install git -y")
+                        if transport.recv_exit_status() > 1:
+                            self.logger.info("Failed to install git")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Git successfully installed")
+                            git_install = True
+                    if not pip_install and git_install:
+                        self.logger.info("Preparing to install pip")
+                        transport = client.get_transport().open_session()
+                        transport.exec_command("sudo apt install python3-pip -y")
+                        if transport.recv_exit_status() > 1:
+                            self.logger.info("Failed to install Pip")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Pip successfully installed")
+                            pip_install = True
+                    if not repo_clone and pip_install:
+                        self.logger.info("Preparing to clone repo")
+                        transport = client.get_transport().open_session()
+                        self.logger.info("cloning repo")
+                        transport.exec_command("git clone https://github.com/brianmc95/cloud-fyp.git")
+                        if transport.recv_exit_status() > 1:
+                            self.logger.ingo("Failed to clone repo")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Repo successfully cloned")
+                            repo_clone = True
+                    if not script_run and repo_clone:
+                        transport = client.get_transport().open_session()
+                        self.logger.info("Deploying monitoring script")
+                        transport.exec_command(
+                            "/cloud-fyp/monitoring/utilities/linux_mon_deploy.sh -ip {} -p {} -id {} -pv {}".format(ip,
+                                                                                                                    port,
+                                                                                                                    node.id,
+                                                                                                                    "aws"))
+                        if transport.recv_exit_status() > 1:
+                            self.logger.ingo("Failed to deploy script")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("Repo successfully deployed script")
+                            script_run = True
 
-        except paramiko.AuthenticationException as e:
-            self.logger.exception(e)
-            self.logger.exception("Incorrect username used trying another one.")
+                except paramiko.AuthenticationException as e:
+                    self.logger.info(e)
+                    self.logger.info("Incorrect username used trying another one.")
+                    current_pos += 1
+                    continue
+
+                except paramiko.SSHException as e:
+                    self.logger.info(e)
+                    self.logger.info("Issue with ssh client failed to deploy")
+                    break
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:
