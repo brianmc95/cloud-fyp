@@ -128,7 +128,7 @@ class AWS(Account):
                             self.logger.info("Git successfully installed")
                             git_install = True
                     if not pip_install and git_install:
-                        self.logger.info("Preparing to install pip")
+                        self.logger.info("Preparing to install pip3")
                         transport = client.get_transport().open_session()
                         transport.exec_command("sudo apt install python3-pip -y")
                         if transport.recv_exit_status() > 1:
@@ -175,6 +175,7 @@ class AWS(Account):
                 except paramiko.ssh_exception.NoValidConnectionsError as e:
                     self.logger.info(e)
                     self.logger.info("Failed to ssh into machine")
+                    
                 except paramiko.SSHException as e:
                     self.logger.info(e)
                     self.logger.info("Issue with ssh client failed to deploy")

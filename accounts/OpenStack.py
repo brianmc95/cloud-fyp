@@ -66,6 +66,7 @@ class OpenStack(Account):
         config_json = json.load(config_file)
         ip = config_json["public-ip"]
         port = config_json["port"]
+        machine_running = False
         apt_get_update = False
         git_install = False
         pip_install = False
@@ -73,7 +74,9 @@ class OpenStack(Account):
         script_run = False
         fails = 0
         while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(minutes=10) and fails < 5:
-            node = self.get_node(id=node.id)
+            time.sleep(30)
+            if not machine_running:
+                node = self.get_node(id=node.id)
             self.logger.info("FAILS: {}".format(fails))
             self.logger.info("APT-GET UPDATE: {}".format(apt_get_update))
             self.logger.info("GIT INSTALLED: {}".format(git_install))
@@ -81,6 +84,7 @@ class OpenStack(Account):
             self.logger.info("REPO CLONED: {}".format(repo_clone))
             self.logger.info("MONITORING DEPLOYED: {}".format(script_run))
             if node.state == "running":
+                machine_running = True
                 try:
                     client = paramiko.SSHClient()
                     client.load_system_host_keys()
@@ -116,7 +120,7 @@ class OpenStack(Account):
                             git_install = True
 
                     if not pip_install and git_install:
-                        self.logger.info("Preparing to install python3-pip")
+                        self.logger.info("Preparing to install pip3")
                         transport = client.get_transport().open_session()
                         transport.exec_command("sudo apt install python3-pip -y")
                         if transport.recv_exit_status() > 1:
@@ -161,6 +165,10 @@ class OpenStack(Account):
                     self.logger.info("Incorrect username used trying another one.")
                     current_pos += 1
                     continue
+
+                except paramiko.ssh_exception.NoValidConnectionsError as e:
+                    self.logger.info(e)
+                    self.logger.info("Failed to ssh into machine")
 
                 except paramiko.SSHException as e:
                     self.logger.info(e)
