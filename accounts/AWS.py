@@ -18,9 +18,11 @@ class AWS(Account):
         self.region = region
         self.ec2cls = node_providers.get_driver(node_types.Provider.EC2)
         self.s3cls = storage_providers.get_driver(storage_types.Provider.S3_EU_WEST)
+        self.access_id = access_id
+        self.secret_key = secret_key
 
-        self.node_driver = self.ec2cls(access_id, secret_key, region=self.region)
-        self.storage_driver = self.s3cls(access_id, secret_key, region=self.region)
+        self.node_driver = self.ec2cls(self.access_id, self.secret_key, region=self.region)
+        self.storage_driver = self.s3cls(self.access_id, self.secret_key, region=self.region)
 
         self.__free_tier_images = ["ami-075eca7e", "ami-b09e1ac9", "ami-32b6214b", "ami-c90195b0", "ami-8fd760f6",
                                    "ami-cddc5bb4", "ami-5bf34b22", "ami-70fe4609", "ami-8668d0ff", "ami-8c77cff5",
@@ -28,6 +30,9 @@ class AWS(Account):
                                    "ami-b3cb4cca", "ami-2e832957", "ami-0659cd7f", "ami-974cdbee"]
 
         self.__linux_mon = "linux_mon_diploy.sh"
+
+    def get_key_info(self):
+        return self.access_id, self.secret_key
 
     def list_images(self):
         images = []
