@@ -16,7 +16,6 @@ import os
 import random
 from retrying import retry
 import logging
-from server.DataManager import DataManager
 
 
 class Account:
@@ -30,8 +29,8 @@ class Account:
         self.db = self.client["cloud-fyp"]
         self.inst_info = self.db["instances"]
         self.vols = self.db["volumes"]
-        self.linux_mon = "{}/monitoring/utilities/linux_mon_diploy.sh".format(self.__get_root_path())
-        self.dm = DataManager()
+        self.root_path = self.__get_root_path()
+        self.linux_mon = "{}/monitoring/utilities/linux_mon_diploy.sh".format(self.root_path)
 
     def __get_root_path(self):
         full_path = os.getcwd()

@@ -73,7 +73,6 @@ class Migrate:
     def copy_image_local(self):
         """
         Function to copy the root volume of a node to a newly created node of the same size
-        :return: None
         """
 
         block_devices = self.node.extra["block_device_mapping"]
@@ -145,9 +144,10 @@ class Migrate:
         # Add aws credentials to the instance to be copied.
         aws_access_id, aws_secret_key = self.aws_prov.get_key_info()
         # TODO: Add step to check if awscli is installed if not then install it manually
+        self.ssh.exec_command("pip install awscli --upgrade --user")
         cmd = """aws configure set aws_access_key_id {};
         aws configure set aws_secret_access_key {};
-        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location) # location is not correct region
+        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location)
         self.logger.info("Running aws config command: {}".format(cmd))
         stdin, stdout, stderr = self.ssh.exec_command(cmd)
         self.logger.info(stdout.readlines())

@@ -55,8 +55,11 @@ class AWS(Account):
 
         self.log_node(node, name, size, image, "aws")
         self.logger.info("Successfully added node to the instances db")
-        key_loc = self.dm.get_key("aws", key_name)
+        key_loc = self.__get_key(key_name)
         self.deploy_monitor(node, key_loc, False)
+
+    def __get_key(self, key_name):
+        return "{}/{}/{}/{}.pem".format(self.root_path, "keys", "openstack", key_name)
 
     def deploy_monitor(self, node, key_loc, log):
         if log:
