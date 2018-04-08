@@ -60,7 +60,7 @@ class AWS(Account):
         self.deploy_monitor(node, key_loc, False)
 
     def __get_key(self, key_name):
-        return "{}/{}/{}/{}.pem".format(self.root_path, "keys", "openstack", key_name)
+        return "{}/{}/{}/{}.pem".format(self.root_path, "keys", "aws", key_name)
 
     def deploy_monitor(self, node, key_loc, log):
         if log:
