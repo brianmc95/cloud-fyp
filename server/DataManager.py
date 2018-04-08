@@ -431,7 +431,8 @@ class DataManager:
             self.logger.info(cursor.count())
             for result in cursor:
                 self.logger.info(result["DATE_TIME"])
-                old_year = result["DATE_TIME"].year
+                date = datetime.datetime.strptime(result["DATE_TIME"], "%Y-%m-%d %H:%M:%S")
+                old_year = date.year
         else:
             old_year = datetime.datetime.now().year
 
@@ -440,7 +441,8 @@ class DataManager:
             self.logger.info(cursor.count())
             for result in cursor:
                 self.logger.info(result["DATE_TIME"])
-                new_year = result["DATE_TIME"].year
+                date = datetime.datetime.strptime(result["DATE_TIME"], "%Y-%m-%d %H:%M:%S")
+                new_year = date.year
         else:
             new_year = datetime.datetime.now().year
 
