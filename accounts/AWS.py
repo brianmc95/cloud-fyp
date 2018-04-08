@@ -74,7 +74,7 @@ class AWS(Account):
         current_pos = 0
         config_file = open("config/manager-config.json")
         config_json = json.load(config_file)
-        ip = config_json["public-ip"]
+        manager_ip = config_json["public-ip"]
         port = config_json["port"]
         machine_running = False
         apt_get_update = False
@@ -158,7 +158,7 @@ class AWS(Account):
                         transport = client.get_transport().open_session()
                         self.logger.info("Deploying monitoring script")
                         transport.exec_command(
-                            "./cloud-fyp/monitoring/utilities/linux_mon_deploy.sh -ip {} -p {} -id {} -pv {}".format(ip,
+                            "./cloud-fyp/monitoring/utilities/linux_mon_deploy.sh -ip {} -p {} -id {} -pv {}".format(manager_ip,
                                                                                                                     port,
                                                                                                                     node.id,
                                                                                                                     "aws"))
