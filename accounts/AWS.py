@@ -144,7 +144,7 @@ class AWS(Account):
                         self.logger.info("cloning repo")
                         transport.exec_command("git clone https://github.com/brianmc95/cloud-fyp.git")
                         if transport.recv_exit_status() > 1:
-                            self.logger.ingo("Failed to clone repo")
+                            self.logger.info("Failed to clone repo")
                             fails += 1
                             continue
                         else:
@@ -159,7 +159,7 @@ class AWS(Account):
                                                                                                                     node.id,
                                                                                                                     "aws"))
                         if transport.recv_exit_status() > 1:
-                            self.logger.ingo("Failed to deploy script")
+                            self.logger.info("Failed to deploy script")
                             fails += 1
                             continue
                         else:
