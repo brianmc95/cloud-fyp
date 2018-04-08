@@ -428,18 +428,18 @@ class DataManager:
         new_year = datetime.datetime.today().year
         cursor = self.inst_use.find({}).sort([("DATE_TIME", 1)]).limit(1)
         if cursor.count() > 0:
-            print(cursor.count())
+            self.logger.info(cursor.count())
             for result in cursor:
-                print(result["DATE_TIME"])
+                self.logger.info(result["DATE_TIME"])
                 old_year = result["DATE_TIME"].year
         else:
             old_year = datetime.datetime.now().year
 
         cursor = self.inst_use.find({}).sort([("DATE_TIME", -1)]).limit(1)
         if cursor.count() > 0:
-            print(cursor.count())
+            self.logger.info(cursor.count())
             for result in cursor:
-                print(result["DATE_TIME"])
+                self.logger.info(result["DATE_TIME"])
                 new_year = result["DATE_TIME"].year
         else:
             new_year = datetime.datetime.now().year
