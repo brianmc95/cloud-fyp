@@ -87,7 +87,7 @@ def gen_report(instance_id, provider, previous_report):
 def send_report(report, server_ip, server_port):
     # Send the generated report to the central server
     url = "http://{}:{}/addrecord/".format(server_ip, server_port)
-    r = requests.post(url=url, json=report)  # Requests deals with converting to json2
+    r = requests.post(url=url, data=json.dumps(report))
     if r.status_code != 200:
         print("Report failed to send")
         print(report)
