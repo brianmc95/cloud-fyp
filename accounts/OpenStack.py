@@ -38,10 +38,11 @@ class OpenStack(Account):
         return self.node_driver.ex_list_security_groups()
 
     def create_node(self, name, size, image, networks, security_groups, key_name):
+        self.logger.info(name, size, image, networks, security_groups, key_name)
         node = self.node_driver.create_node(name=name,
                                             size=size,
                                             image=image,
-                                            subnet=networks,
+                                            networks=networks,
                                             ex_security_groups=security_groups,
                                             ex_keyname=key_name)
 
