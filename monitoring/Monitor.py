@@ -19,11 +19,11 @@ def get_prev_report():
     prev_report = None
     try:
         prev_report = json.load(open("monitor/prev_report.json"))
-    except json.JSONDecodeError as e:
-        print(e)
     except FileNotFoundError as e:
         print(e)
     except ValueError as e:
+        print(e)
+    except Exception as e:
         print(e)
     return prev_report
 
