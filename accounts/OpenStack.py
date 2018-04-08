@@ -1,7 +1,5 @@
 from libcloud.compute.types import Provider
 from libcloud.compute.providers import get_driver
-from libcloud.compute.deployment import ScriptDeployment
-from libcloud.compute.base import DeploymentError
 from keystoneauth1 import loading
 from keystoneauth1 import session
 from glanceclient import Client
