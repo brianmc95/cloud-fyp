@@ -48,7 +48,8 @@ class OpenStack(Account):
         self.log_node(node, name, size, image, "openstack")
         self.logger.info("Successfully added node to the instances db")
         key_loc = self.__get_key(key_name)
-        self.deploy_monitor(node, key_loc, False)
+        result = self.deploy_monitor(node, key_loc, False)
+        return result
 
     def __get_key(self, key_name):
         return "{}/{}/{}/{}.pem".format(self.root_path, "keys", "openstack", key_name)

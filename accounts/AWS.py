@@ -58,7 +58,8 @@ class AWS(Account):
         self.log_node(node, name, size, image, "aws")
         self.logger.info("Successfully added node to the instances db")
         key_loc = self.__get_key(key_name)
-        self.deploy_monitor(node, key_loc, False)
+        result = self.deploy_monitor(node, key_loc, False)
+        return result
 
     def __get_key(self, key_name):
         return "{}/{}/{}/{}.pem".format(self.root_path, "keys", "aws", key_name)
@@ -162,7 +163,7 @@ class AWS(Account):
                             fails += 1
                             continue
                         else:
-                            self.logger.info("Repo successfully deployed script")
+                            self.logger.info("Successfully deployed script")
                             return True
 
                 except paramiko.AuthenticationException as e:
