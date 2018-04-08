@@ -4,6 +4,7 @@ import libcloud.storage.types as storage_types
 import libcloud.storage.providers as storage_providers
 import datetime
 import paramiko
+import paramiko.ssh_exception
 import time
 
 from accounts.Account import Account
@@ -74,20 +75,24 @@ class AWS(Account):
         config_json = json.load(config_file)
         ip = config_json["public-ip"]
         port = config_json["port"]
+        machine_running = False
         git_install = False
         pip_install = False
         repo_clone = False
         script_run = False
         fails = 0
         while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(
-                minutes=8) and fails < 5 and not script_run:
-            node = self.get_node(id=node.id)
+                minutes=10) and fails < 5 and not script_run:
+            time.sleep(30)
+            if not machine_running:
+                node = self.get_node(id=node.id)
             self.logger.info("FAILS: {}".format(fails))
             self.logger.info("GIT INSTALLED: {}".format(git_install))
             self.logger.info("PIP INSTALLED: {}".format(pip_install))
             self.logger.info("REPO CLONED: {}".format(repo_clone))
-            self.logger.info("MONITORIN DEPLOYED: {}".format(script_run))
+            self.logger.info("MONITORING DEPLOYED: {}".format(script_run))
             if node.state == "running":
+                machine_running = True
                 try:
                     client = paramiko.SSHClient()
                     client.load_system_host_keys()
@@ -153,12 +158,13 @@ class AWS(Account):
                     current_pos += 1
                     continue
 
+                except paramiko.ssh_exception.NoValidConnectionsError as e:
+                    self.logger.info(e)
+                    self.logger.info("Failed to ssh into machine")
                 except paramiko.SSHException as e:
                     self.logger.info(e)
                     self.logger.info("Issue with ssh client failed to deploy")
                     break
-            else:
-                time.sleep(30)
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:
