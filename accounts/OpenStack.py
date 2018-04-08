@@ -91,10 +91,14 @@ class OpenStack(Account):
                     client.load_system_host_keys()
                     client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                     key = paramiko.RSAKey.from_private_key_file(key_loc)
-                    self.logger.debug(node.public_ips[0])
+                    if len(node.public_ips) > 0:
+                        ip = node.public_ips[0]
+                    elif len(node.private_ips) > 0:
+                        ip = node.private_ips[0]
+                    self.logger.debug(ip)
                     self.logger.debug(ssh_names[current_pos])
                     self.logger.info("Setting up SSH session")
-                    client.connect(node.public_ips[0], username=ssh_names[current_pos], pkey=key, timeout=180)
+                    client.connect(ip, username=ssh_names[current_pos], pkey=key, timeout=180)
 
                     if not apt_get_update:
                         self.logger.info("Update apt-get to ensure it works correctly.")
