@@ -429,14 +429,15 @@ class DataManager:
         cursor = self.inst_use.find({}).sort([("DATE_TIME", 1)]).limit(1)
         if cursor.count() > 0:
             for result in cursor:
-                if result
                 old_year = result["DATE_TIME"].year
+        else:
+            old_year = datetime.datetime.now().year
 
-            cursor = self.inst_use.find({}).sort([("DATE_TIME", -1)]).limit(1)
+        cursor = self.inst_use.find({}).sort([("DATE_TIME", -1)]).limit(1)
+        if cursor.count() > 0:
             for result in cursor:
                 new_year = result["DATE_TIME"].year
         else:
-            old_year = datetime.datetime.now().year
             new_year = datetime.datetime.now().year
 
         if old_year != new_year:
