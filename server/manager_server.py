@@ -158,8 +158,8 @@ class SimpleHTTPRequestHandler(http.server.BaseHTTPRequestHandler):
                 if result:
                     self.send_response(200)
                     self.end_headers()
-                    success = True
                     self.logger.info("Success in adding a record")
+                    success = True
 
         if not success:
             self.logger.info("Request could not be successfully handled")

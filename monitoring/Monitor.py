@@ -86,11 +86,20 @@ def gen_report(instance_id, provider, previous_report):
 
 def send_report(report, server_ip, server_port):
     # Send the generated report to the central server
-    url = "http://{}:{}/addrecord/".format(server_ip, server_port)
-    r = requests.post(url=url, data=json.dumps(report))
-    if r.status_code != 200:
-        print("Report failed to send")
-        print(report)
+    try:
+        url = "http://{}:{}/addrecord/".format(server_ip, server_port)
+        r = requests.post(url=url, data=json.dumps(report))
+        if r.status_code != 200:
+            print("Report failed to send")
+            print(report)
+    except requests.exceptions.HTTPError as errh:
+        print("Http Error: {}".format(errh))
+    except requests.exceptions.ConnectionError as errc:
+        print("Error Connecting: {}".format(errc))
+    except requests.exceptions.Timeout as errt:
+        print("Timeout Error: {}".format(errt))
+    except requests.exceptions.RequestException as err:
+        print("ERROR: {}".format(err))
 
 
 def main():

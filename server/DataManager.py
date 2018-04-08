@@ -59,9 +59,14 @@ class DataManager:
             if insert_id:
                 self.logger.info("Successfully added the account, inserted in {}".format(insert_id))
                 return True
+            self.logger.info("Was unable to inser the account")
             return False
         except pymongo.errors.ConnectionFailure as e:
             self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
+            return False
+        except Exception as e:
+            self.logger.exception("Something went very wrong")
             self.logger.exception(e)
             return False
 
@@ -278,6 +283,10 @@ class DataManager:
             return instance_post_id
         except pymongo.errors.ConnectionFailure as e:
             self.logger.exception("Could not access the MongoDB")
+            self.logger.exception(e)
+            return False
+        except Exception as e:
+            self.logger.exception("Something went wrong")
             self.logger.exception(e)
             return False
 
