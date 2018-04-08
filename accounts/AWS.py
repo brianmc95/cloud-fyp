@@ -76,6 +76,7 @@ class AWS(Account):
         ip = config_json["public-ip"]
         port = config_json["port"]
         machine_running = False
+        apt_get_update = False
         git_install = False
         pip_install = False
         repo_clone = False
@@ -87,6 +88,7 @@ class AWS(Account):
             if not machine_running:
                 node = self.get_node(id=node.id)
             self.logger.info("FAILS: {}".format(fails))
+            self.logger.info("UPDATE APT-GET: {}".format(apt_get_update))
             self.logger.info("GIT INSTALLED: {}".format(git_install))
             self.logger.info("PIP INSTALLED: {}".format(pip_install))
             self.logger.info("REPO CLONED: {}".format(repo_clone))
@@ -102,7 +104,19 @@ class AWS(Account):
                     self.logger.debug(ssh_names[current_pos])
                     self.logger.info("Setting up SSH session")
                     client.connect(node.public_ips[0], username=ssh_names[current_pos], pkey=key, timeout=180)
-                    if not git_install:
+
+                    if not apt_get_update:
+                        self.logger.info("Update apt-get to ensure it works correctly.")
+                        transport = client.get_transport().open_session()
+                        transport.exec_command("sudo apt-get update -y")
+                        if transport.recv_exit_status() > 1:
+                            self.logger.info("Failed to update apt-get")
+                            fails += 1
+                            continue
+                        else:
+                            self.logger.info("apt-get updated successfully")
+                            apt_get_update = True
+                    if not git_install and apt_get_update:
                         self.logger.info("Preparing to install git")
                         transport = client.get_transport().open_session()
                         transport.exec_command("sudo apt install git -y")
