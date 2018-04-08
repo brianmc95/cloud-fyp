@@ -78,7 +78,7 @@ class OpenStack(Account):
             if not machine_running:
                 node = self.get_node(id=node.id)
             self.logger.info("FAILS: {}".format(fails))
-            self.logger.info("APT-GET UPDATE: {}".format(apt_get_update))
+            self.logger.info("UPDATE APT-GET: {}".format(apt_get_update))
             self.logger.info("GIT INSTALLED: {}".format(git_install))
             self.logger.info("PIP INSTALLED: {}".format(pip_install))
             self.logger.info("REPO CLONED: {}".format(repo_clone))
@@ -174,8 +174,6 @@ class OpenStack(Account):
                     self.logger.info(e)
                     self.logger.info("Issue with ssh client failed to deploy")
                     break
-            else:
-                time.sleep(30)
 
     def get_node_info(self, node_id):
         return self.node_driver.ex_get_node_details(node_id)

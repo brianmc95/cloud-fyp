@@ -175,7 +175,7 @@ class AWS(Account):
                 except paramiko.ssh_exception.NoValidConnectionsError as e:
                     self.logger.info(e)
                     self.logger.info("Failed to ssh into machine")
-                    
+
                 except paramiko.SSHException as e:
                     self.logger.info(e)
                     self.logger.info("Issue with ssh client failed to deploy")
