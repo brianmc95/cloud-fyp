@@ -154,7 +154,7 @@ class AWS(Account):
                         transport = client.get_transport().open_session()
                         self.logger.info("Deploying monitoring script")
                         transport.exec_command(
-                            "/cloud-fyp/monitoring/utilities/linux_mon_deploy.sh -ip {} -p {} -id {} -pv {}".format(ip,
+                            "./cloud-fyp/monitoring/utilities/linux_mon_deploy.sh -ip {} -p {} -id {} -pv {}".format(ip,
                                                                                                                     port,
                                                                                                                     node.id,
                                                                                                                     "aws"))
