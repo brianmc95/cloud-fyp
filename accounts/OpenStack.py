@@ -5,6 +5,7 @@ from keystoneauth1 import session
 from glanceclient import Client
 import paramiko
 import datetime
+import time
 
 from accounts.Account import Account
 import json
@@ -147,6 +148,8 @@ class OpenStack(Account):
                     self.logger.info(e)
                     self.logger.info("Issue with ssh client failed to deploy")
                     break
+            else:
+                time.sleep(30)
 
     def get_node_info(self, node_id):
         return self.node_driver.ex_get_node_details(node_id)

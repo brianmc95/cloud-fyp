@@ -4,6 +4,7 @@ import libcloud.storage.types as storage_types
 import libcloud.storage.providers as storage_providers
 import datetime
 import paramiko
+import time
 
 from accounts.Account import Account
 import json
@@ -156,6 +157,8 @@ class AWS(Account):
                     self.logger.info(e)
                     self.logger.info("Issue with ssh client failed to deploy")
                     break
+            else:
+                time.sleep(30)
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:
