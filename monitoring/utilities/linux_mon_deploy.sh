@@ -43,7 +43,8 @@ cp ${cwd}/cloud-fyp/monitoring/Monitor.py ${cwd}/monitor/
 
 rm -rf cloud-fyp
 
-pip3 install requests
+sudo pip3 install requests
+sudo pip3 install psutil
 
 echo "*/5 * * * * python3 ${cwd}/monitor/Monitor.py -ip ${IP} -p ${PORT} -id ${ID} --provider ${PROVIDER}" > monitor/mon_cron_job
 
