@@ -161,7 +161,7 @@ class AWS(Account):
                             "./cloud-fyp/monitoring/utilities/linux_mon_deploy.sh -ip {} -p {} -id {} -pv {}".format(manager_ip,
                                                                                                                     port,
                                                                                                                     node.id,
-                                                                                                                    "aws"))
+                                                                                                                    "openstack"))
                         if transport.recv_exit_status() > 1:
                             self.logger.info("Failed to deploy script")
                             fails += 1
