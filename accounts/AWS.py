@@ -82,8 +82,7 @@ class AWS(Account):
         repo_clone = False
         script_run = False
         fails = 0
-        while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(
-                minutes=10) and fails < 5 and not script_run:
+        while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(minutes=10) and fails < 5:
             time.sleep(30)
             if not machine_running:
                 node = self.get_node(id=node.id)
@@ -164,7 +163,7 @@ class AWS(Account):
                             continue
                         else:
                             self.logger.info("Repo successfully deployed script")
-                            script_run = True
+                            return True
 
                 except paramiko.AuthenticationException as e:
                     self.logger.info(e)

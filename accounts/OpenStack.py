@@ -71,8 +71,7 @@ class OpenStack(Account):
         repo_clone = False
         script_run = False
         fails = 0
-        while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(
-                minutes=8) and fails < 5 and not script_run:
+        while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(minutes=10) and fails < 5:
             node = self.get_node(id=node.id)
             self.logger.info("FAILS: {}".format(fails))
             self.logger.info("APT-GET UPDATE: {}".format(apt_get_update))
@@ -153,8 +152,8 @@ class OpenStack(Account):
                             fails += 1
                             continue
                         else:
-                            self.logger.info("Repo successfully deployed script")
-                            script_run = True
+                            self.logger.info("Successfully deployed script")
+                            return True
 
                 except paramiko.AuthenticationException as e:
                     self.logger.info(e)
