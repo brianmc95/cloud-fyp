@@ -19,7 +19,7 @@ def get_prev_report():
     prev_report = None
     try:
         prev_report = json.load(open("monitor/prev_report.json"))
-    except json.decoder.JSONDecodeError as e:
+    except json.JSONDecodeError as e:
         print(e)
     except FileNotFoundError as e:
         print(e)
@@ -54,7 +54,7 @@ def gen_report(instance_id, provider, previous_report):
 
     for disk in psutil.disk_partitions(all=False):
         disk_usage = psutil.disk_usage(disk.mountpoint)
-        report["DISK_USAGE"][disk.device] = {"INSTANCE_ASSIGNED_ID": assigned_id,
+        report["DISK_USAGE"][disk.device] = {"INSTANCE_ASSIGNED_ID": instance_id,
                                              "DATETIME": now,
                                              "PROVIDER": provider,
                                              "TOTAL": disk_usage.total,
