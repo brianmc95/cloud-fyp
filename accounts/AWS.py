@@ -4,6 +4,8 @@ import libcloud.storage.types as storage_types
 import libcloud.storage.providers as storage_providers
 from libcloud.compute.deployment import ScriptFileDeployment
 from libcloud.compute.base import DeploymentError
+import paramiko
+import datetime
 
 from accounts.Account import Account
 import json
@@ -45,58 +47,34 @@ class AWS(Account):
     def availability_zones(self):
         return self.node_driver.ex_list_availability_zones()
 
-    def create_node(self, name, size, image, networks, security_groups):
-        self.node_driver.create_node(name=name,
-                                     size=size,
-                                     image=image,
-                                     subnet=networks,
-                                     security_groups=security_groups)
+    def create_node(self, name, size, image, networks, security_groups, key_name, key_loc):
+        node = self.node_driver.create_node(name=name,
+                                            size=size,
+                                            image=image,
+                                            subnet=networks,
+                                            ex_security_groups=security_groups,
+                                            ex_keyname=key_name)
 
-    def deploy_node_script(self, name, size, image, networks, security_groups, key_name):
+        self.log_node(node, name, size, image, "AWS")
+        self.logger.info("Successfully added node to the instances db")
+
         try:
-            self.logger.info("Beginning the deployment of the instance")
-            self.logger.info("name {}, size {}, image {}, networks {}, security_groups {}, key name {}".format(name,
-                                                                                                              size,
-                                                                                                              image,
-                                                                                                              networks,
-                                                                                                              security_groups,
-                                                                                                              key_name))
-            config_file = open("config/manager-config.json")
-            config_json = json.load(config_file)
-            node_id = self.gen_id()
-            ip = config_json["public-ip"]
-            port = config_json["port"]
-            mon_args = ["-ip {}".format(ip), "-p {}".format(port), "-id {}".format(node_id), "-n {}".format(name)]
-            self.logger.info("node_id: {} IP: {}, PORT: {} args: {}".format(node_id, ip, port, mon_args))
-            monitor = ScriptFileDeployment(self.linux_mon, args=mon_args)
+            start_time = datetime.datetime.now()
+            current_time = datetime.datetime.now()
+            ssh_names = ["ubuntu", "root", "ec2-user", "bitnami", "centos", "admin", "fedora"]
+            current_pos = 0
+            while current_pos < len(ssh_names) and current_time - start_time < datetime.timedelta(minutes=8):
+                node = self.get_node(id=node.id)
+                if node.state == "running":
+                    client = paramiko.SSHClient()
+                    client.load_system_host_keys()
+                    client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                    key = paramiko.RSAKey.from_private_key_file(key_loc)
+                    connection = client.connect(node.public_ips[0], username=ssh_names[current_pos], pkey=key)
 
-            node = self.node_driver.deploy_node(name=name,
-                                                size=size,
-                                                image=image,
-                                                networks=networks,
-                                                ex_security_groups=security_groups,
-                                                ex_keyname=key_name,
-                                                deploy=monitor)
-
-            self.log_node(node, node_id, name, size, image, "AWS")
-            self.logger.info("Successfully added node to the instances db")
-            return True
-
-        except DeploymentError as e:
-            self.logger.exception("Deployment failed could not connect to node, timeout error")
+        except paramiko.AuthenticationException as e:
             self.logger.exception(e)
-            return False
-        except IOError as e:
-            self.logger.exception("Key file was unnaccessible and so failed to deploy node")
-            return False
-        except json.JSONDecodeError as e:
-            self.logger.exception("Was unable to open json config file")
-            self.logger.exception(e)
-            return False
-        except Exception as e:
-            self.logger.exception("Something happened which wasn't good")
-            self.logger.exception(e)
-        return False
+            self.logger.exception("Incorrect username used trying another one.")
 
     def create_volume(self, name, size, location=None, snapshot=None):
         if location is None:

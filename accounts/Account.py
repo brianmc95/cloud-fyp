@@ -130,26 +130,10 @@ class Account:
             if (node.id == id or node.name == name) and node.state.lower() != "terminated":
                 return node
 
-    def gen_id(self):
-        attempt = 0
-        inUse = 0
-        while True:
-            rand_id = ''.join(random.choice(string.ascii_letters + string.digits) for _ in range(32))
-            db = self.client["cloud-fyp"]
-            collection = db["instances"]
-            inUse = collection.count({'ASSIGNED_ID': rand_id})
-            attempt += 1
-            if inUse == 0:
-                break
-            if attempt > 3:
-                print("Failed to generate a random ID")
-                return False
-        return rand_id
 
-    def log_node(self, node, assigned_id, name, size, image, provider):
+    def log_node(self, node, name, size, image, provider):
         post = {
             "INSTANCE_ID": node.id,
-            "ASSIGNED_ID": assigned_id,
             "INSTANCE_NAME": name,
             "SIZE": size.name,
             "IMAGE": image.name,

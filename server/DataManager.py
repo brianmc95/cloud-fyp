@@ -377,7 +377,7 @@ class DataManager:
 
         # TODO: if year_overall, merge the months, if month merge the days, if day just leave it?
 
-        all_df = pd.merge(info_df, usage_df, on="ASSIGNED_ID", how="right")
+        all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
 
         # Get the network usage in MB
         all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)

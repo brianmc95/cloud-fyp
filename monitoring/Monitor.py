@@ -27,14 +27,14 @@ def write_prev_net(report):
     with open('monitor/prev_report.json', 'w') as fp:
         json.dump(report, fp)
 
-def gen_report(assigned_id, provider, previous_report):
+def gen_report(instance_id, provider, previous_report):
     # Get all our usage information and generate a report based on this.
 
     today = datetime.now()
     now = today.strftime("%Y-%m-%d %H:%M:%S")
 
     memory_usage = psutil.virtual_memory()
-    report = {"ASSIGNED_ID" : assigned_id,
+    report = {"INSTANCE_ID" : instance_id,
               "DATE_TIME"   : now,
               "CPU_USAGE"   : psutil.cpu_percent(interval=5),
               "MEM_TOTAL"   : memory_usage.total,
