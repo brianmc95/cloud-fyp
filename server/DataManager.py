@@ -270,14 +270,13 @@ class DataManager:
             return False
         return True
 
-    def add_record(self, post_body):
+    def add_record(self, data):
         try:
             # Convert to dict
-            instance_info = json.loads(post_body)
-            disk_info = instance_info["DISK_USAGE"]
-            del instance_info["DISK_USAGE"]
+            disk_info = data["DISK_USAGE"]
+            del data["DISK_USAGE"]
             # Put data into mongoDB
-            instance_post_id = self.inst_use.insert_one(instance_info).inserted_id
+            instance_post_id = self.inst_use.insert_one(data).inserted_id
             vol_post_id = self.vols.insert_one(disk_info).inserted_id
             self.logger.info("Added a record to the db")
             return instance_post_id
