@@ -299,7 +299,7 @@ class DataManager:
         usage_df = pd.DataFrame(list(self.inst_use.find(query_use)))
         vol_df = pd.DataFrame(list(self.vols.find(query_use)))
 
-        all_df = pd.merge(info_df, usage_df, on="ASSIGNED_ID", how="right")
+        all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
 
         # Get the network usage in MB
         all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)
@@ -309,13 +309,13 @@ class DataManager:
         # Do the costings
         size_prices = []
         for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
-            if provider == "AWS":
+            if provider == "aws":
                 if self.aws_prov:
                     size_obj = self.aws_prov.get_size(size)
                     size_prices.append(size_obj.price)
                 else:
                     size_prices.append(0)
-            elif provider == "OPENSTACK":
+            elif provider == "openstack":
                 if self.open_prov:
                     size_obj = self.open_prov.get_size(size)
                     size_prices.append(size_obj.price)
@@ -340,16 +340,21 @@ class DataManager:
         month = int(month)
         day = int(day)
 
+        self.logger.info("Date to work with {}-{}-{}".format(year, month, day))
+
         search_date = datetime.datetime(year, month, day)
         if year_overall:
+            self.logger.info("Working with year overall data")
             end_date = datetime.datetime(year + 1, month, day)
-            id_field = {"ASSIGNED_ID": "$ASSIGNED_ID", "DATE_TIME": {"$month": "$DATE_TIME"}}
+            id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$month": "$DATE_TIME"}}
         elif month_overall:
+            self.logger.info("Working with month overall data")
             end_date = datetime.datetime(year, month + 1, day)
-            id_field = {"ASSIGNED_ID": "$ASSIGNED_ID", "DATE_TIME": {"$dayOfMonth": "$DATE_TIME"}}
+            id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$dayOfMonth": "$DATE_TIME"}}
         else:
+            self.logger.info("Working with daily data")
             end_date = datetime.datetime(year, month, day + 1)
-            id_field = {"ASSIGNED_ID": "$ASSIGNED_ID", "DATE_TIME": {"$hour": "$DATE_TIME"}}
+            id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$hour": "$DATE_TIME"}}
 
         pipeline = [
             {
@@ -383,6 +388,7 @@ class DataManager:
 
         # TODO: Do more to manage the case where there is no data.
         if usage_df.size == 0:
+            self.logger.info("No results found and as such nothing to return")
             return []
 
         usage_df = self.__unpack(usage_df, "_id")
@@ -391,10 +397,13 @@ class DataManager:
 
         all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
 
+        self.logger.info("Joined the instance and usage info")
         # Get the network usage in MB
         all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)
         all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
         all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
+
+        self.logger.info("Setup the Usages so that they are in easier amounts to deal with")
 
         # Do the costings
         size_prices = []
@@ -405,6 +414,8 @@ class DataManager:
             elif provider == "OPENSTACK":
                 size_obj = self.open_prov.get_size(size)
                 size_prices.append(size_obj.price)
+
+        self.logger.info("Dealt with costings, costs: {}".format(size_prices))
 
         full_cost = [((cost/(60/5)) * records) for cost, records in zip(size_prices, all_df["RECORDS"])]
 
@@ -450,6 +461,8 @@ class DataManager:
             years = range(old_year, new_year + 1)
         else:
             years = [old_year]
+
+        self.logger.info("Years for results {}".format(years))
 
         months = {"Janurary": 1, "February": 2, "March": 3, "April": 4, "May": 5, "June": 6,
                   "July": 7, "August": 8, "September": 9, "October": 10, "November": 11, "December": 12}
