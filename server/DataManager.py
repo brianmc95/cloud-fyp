@@ -274,6 +274,7 @@ class DataManager:
         try:
             # Convert to dict
             disk_info = data["DISK_USAGE"]
+            data["DATE_TIME"] = datetime.datetime.strptime(data["DATE_TIME"], "%Y-%m-%d %H:%M:%S")
             del data["DISK_USAGE"]
             # Put data into mongoDB
             instance_post_id = self.inst_use.insert_one(data).inserted_id
