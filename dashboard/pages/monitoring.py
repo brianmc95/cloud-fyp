@@ -120,6 +120,8 @@ def update_selected_row_indices(clickData, selected_row_indices):
      Input('usage-table', 'selected_row_indices')])
 def update_figure(rows, selected_row_indices):
     dff = pd.DataFrame(rows)
+    print(dff)
+    print(dff.columns)
     fig = plotly.tools.make_subplots(
         rows=4, cols=1,
         subplot_titles=('CPU Usage', 'Memory Usage', 'Network Usage', 'Costing'),

@@ -291,148 +291,150 @@ class DataManager:
             return False
 
     def get_current_data(self):
-        datetime.datetime.today()
-        query_use = {"DATE_TIME": {"$gte": (datetime.datetime.now() - datetime.timedelta(minutes=70))}} # Accounting for UTC
-        self.logger.info(query_use)
-        provider_query = {}
-        info_df = pd.DataFrame(list(self.inst_info.find(provider_query)))
-        usage_df = pd.DataFrame(list(self.inst_use.find(query_use)))
-        vol_df = pd.DataFrame(list(self.vols.find(query_use)))
-
-        self.logger.info("Records for instances: {}".format(info_df.count()))
-        self.logger.info("Records of instance usages: {}".format(usage_df.count()))
         try:
+            datetime.datetime.today()
+            query_use = {"DATE_TIME": {"$gte": (datetime.datetime.now() - datetime.timedelta(minutes=70))}} # Accounting for UTC
+            self.logger.info(query_use)
+            provider_query = {}
+            info_df = pd.DataFrame(list(self.inst_info.find(provider_query)))
+            usage_df = pd.DataFrame(list(self.inst_use.find(query_use)))
+            vol_df = pd.DataFrame(list(self.vols.find(query_use)))
+
+            self.logger.info("Records for instances: {}".format(info_df.count()))
+            self.logger.info("Records of instance usages: {}".format(usage_df.count()))
+
             all_df = pd.merge(info_df, usage_df, on=["INSTANCE_ID", "PROVIDER"], how="right")
+
+            # Get the network usage in MB
+            all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)
+            all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
+            all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
+
+            # Do the costings
+            size_prices = []
+            for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
+                if provider == "aws":
+                    if self.aws_prov:
+                        size_obj = self.aws_prov.get_size(size)
+                        size_prices.append(size_obj.price)
+                    else:
+                        size_prices.append(0)
+                elif provider == "openstack":
+                    if self.open_prov:
+                        size_obj = self.open_prov.get_size(size)
+                        size_prices.append(size_obj.price)
+                    else:
+                        size_prices.append(0)
+
+            all_df["COST"] = size_prices
+            return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
+                           "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]].to_json()
         except KeyError as e:
             self.logger.exception("Appears there is no data being collected currently")
             self.logger.exception(e)
             return []
-
-        # Get the network usage in MB
-        all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)
-        all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
-        all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
-
-        # Do the costings
-        size_prices = []
-        for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
-            if provider == "aws":
-                if self.aws_prov:
-                    size_obj = self.aws_prov.get_size(size)
-                    size_prices.append(size_obj.price)
-                else:
-                    size_prices.append(0)
-            elif provider == "openstack":
-                if self.open_prov:
-                    size_obj = self.open_prov.get_size(size)
-                    size_prices.append(size_obj.price)
-                else:
-                    size_prices.append(0)
-
-        all_df["COST"] = size_prices
-        return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
-                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]].to_json()
 
     def get_specific_data(self, year, month=None, day=None):
-        year_overall = False
-        month_overall = False
-        if month is None:
-            year_overall = True
-            month = 1
-        if day is None:
-            month_overall = True
-            day = 1
-
-        year = int(year)
-        month = int(month)
-        day = int(day)
-
-        self.logger.info("Date to work with {}-{}-{}".format(year, month, day))
-
-        search_date = datetime.datetime(year, month, day)
-        if year_overall:
-            self.logger.info("Working with year overall data")
-            end_date = datetime.datetime(year + 1, month, day)
-            id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$month": "$DATE_TIME"}}
-        elif month_overall:
-            self.logger.info("Working with month overall data")
-            end_date = datetime.datetime(year, month + 1, day)
-            id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$dayOfMonth": "$DATE_TIME"}}
-        else:
-            self.logger.info("Working with daily data")
-            end_date = datetime.datetime(year, month, day + 1)
-            id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$hour": "$DATE_TIME"}}
-
-        pipeline = [
-            {
-                "$match": {
-                    "DATE_TIME": {
-                        "$gte": search_date,
-                        "$lt": end_date
-                    }
-                }
-            },
-            {
-                "$group": {
-                    "_id": id_field,
-                    "RECORDS": {"$sum": 1},
-                    "CPU_USAGE": {"$avg": "$CPU_USAGE"},
-                    "MEM_AVAIL": {"$avg": "$MEM_AVAIL"},
-                    "MEM_TOTAL": {"$max": "$MEM_TOTAL"},
-                    "CONNECTIONS": {"$avg": "$CONNECTIONS"},
-                    "PACKETS_RECV": {"$avg": "$PACKETS_RECV"},
-                    "PACKETS_SENT": {"$avg": "$PACKETS_SENT"},
-                    "BYTES_SENT": {"$avg": "$BYTES_SENT"},
-                    "BYTES_RECV": {"$avg": "$BYTES_RECV"}
-                }
-            },
-        ]
-
-        query_use = {"DATE_TIME": {"$lt": end_date, "$gt": search_date}}
-        info_df = pd.DataFrame(list(self.inst_info.find()))
-        usage_df = pd.DataFrame(list(self.inst_use.aggregate(pipeline)))
-        vol_df = pd.DataFrame(list(self.vols.find(query_use)))
-
-        self.logger.info("Records for instances: {}".format(info_df.count()))
-        self.logger.info("Records of instance usages: {}".format(usage_df.count()))
         try:
+            year_overall = False
+            month_overall = False
+            if month is None:
+                year_overall = True
+                month = 1
+            if day is None:
+                month_overall = True
+                day = 1
+
+            year = int(year)
+            month = int(month)
+            day = int(day)
+
+            self.logger.info("Date to work with {}-{}-{}".format(year, month, day))
+
+            search_date = datetime.datetime(year, month, day)
+            if year_overall:
+                self.logger.info("Working with year overall data")
+                end_date = datetime.datetime(year + 1, month, day)
+                id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$month": "$DATE_TIME"}}
+            elif month_overall:
+                self.logger.info("Working with month overall data")
+                end_date = datetime.datetime(year, month + 1, day)
+                id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$dayOfMonth": "$DATE_TIME"}}
+            else:
+                self.logger.info("Working with daily data")
+                end_date = datetime.datetime(year, month, day + 1)
+                id_field = {"INSTANCE_ID": "$INSTANCE_ID", "DATE_TIME": {"$hour": "$DATE_TIME"}}
+
+            pipeline = [
+                {
+                    "$match": {
+                        "DATE_TIME": {
+                            "$gte": search_date,
+                            "$lt": end_date
+                        }
+                    }
+                },
+                {
+                    "$group": {
+                        "_id": id_field,
+                        "RECORDS": {"$sum": 1},
+                        "CPU_USAGE": {"$avg": "$CPU_USAGE"},
+                        "MEM_AVAIL": {"$avg": "$MEM_AVAIL"},
+                        "MEM_TOTAL": {"$max": "$MEM_TOTAL"},
+                        "CONNECTIONS": {"$avg": "$CONNECTIONS"},
+                        "PACKETS_RECV": {"$avg": "$PACKETS_RECV"},
+                        "PACKETS_SENT": {"$avg": "$PACKETS_SENT"},
+                        "BYTES_SENT": {"$avg": "$BYTES_SENT"},
+                        "BYTES_RECV": {"$avg": "$BYTES_RECV"}
+                    }
+                },
+            ]
+
+            query_use = {"DATE_TIME": {"$lt": end_date, "$gt": search_date}}
+            info_df = pd.DataFrame(list(self.inst_info.find()))
+            usage_df = pd.DataFrame(list(self.inst_use.aggregate(pipeline)))
+            vol_df = pd.DataFrame(list(self.vols.find(query_use)))
+
+            self.logger.info("Records for instances: {}".format(info_df.count()))
+            self.logger.info("Records of instance usages: {}".format(usage_df.count()))
+
             usage_df = self.__unpack(usage_df, "_id")
             all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
+
+            self.logger.info("Joined the instance and usage info")
+            # Get the network usage in MB
+            all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)
+            all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
+            all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
+
+            self.logger.info("Setup the Usages so that they are in easier amounts to deal with")
+
+            # Do the costings
+            size_prices = []
+            for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
+                if provider == "aws":
+                    size_obj = self.aws_prov.get_size(size)
+                    self.logger.info("Working with size {}".format(size_obj))
+                    size_prices.append(size_obj.price)
+                    self.logger.info("Working with price {}".format(size_obj.price))
+                elif provider == "openstack":
+                    size_obj = self.open_prov.get_size(size)
+                    self.logger.info("Working with size {}".format(size_obj))
+                    size_prices.append(size_obj.price)
+                    self.logger.info("Working with price {}".format(size_obj.price))
+
+            self.logger.info("Dealt with costings, costs: {}".format(size_prices))
+
+            full_cost = [((cost/(60/5)) * records) for cost, records in zip(size_prices, all_df["RECORDS"])]
+
+            all_df["COST"] = full_cost
+
+            return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
+                           "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]].to_json()
         except KeyError as e:
             self.logger.exception("Appears there is no data being collected currently")
             self.logger.exception(e)
             return []
-
-        self.logger.info("Joined the instance and usage info")
-        # Get the network usage in MB
-        all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)
-        all_df["MEMORY_USAGE"] = all_df.apply(lambda row: (row["MEM_AVAIL"] / row["MEM_TOTAL"]), axis=1)
-        all_df["MEMORY_TOTAL"] = all_df.apply(lambda row: row["MEM_TOTAL"] / 1073741824, axis=1)
-
-        self.logger.info("Setup the Usages so that they are in easier amounts to deal with")
-
-        # Do the costings
-        size_prices = []
-        for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
-            if provider == "aws":
-                size_obj = self.aws_prov.get_size(size)
-                self.logger.info("Working with size {}".format(size_obj))
-                size_prices.append(size_obj.price)
-                self.logger.info("Working with price {}".format(size_obj.price))
-            elif provider == "openstack":
-                size_obj = self.open_prov.get_size(size)
-                self.logger.info("Working with size {}".format(size_obj))
-                size_prices.append(size_obj.price)
-                self.logger.info("Working with price {}".format(size_obj.price))
-
-        self.logger.info("Dealt with costings, costs: {}".format(size_prices))
-
-        full_cost = [((cost/(60/5)) * records) for cost, records in zip(size_prices, all_df["RECORDS"])]
-
-        all_df["COST"] = full_cost
-
-        return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
-                       "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]].to_json()
 
     def __unpack(self, df, column, fillna=None):
         ret = None
