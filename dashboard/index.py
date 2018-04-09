@@ -17,11 +17,9 @@ basicLayout = html.Div([
     html.H3("Brian McCarthy - 114302146 - FYP"),
     html.A(html.Button('Deploy'), href='/deploy'),
     html.A(html.Button('Monitor'), href='/monitoring'),
-    html.A(html.Button('management'), href='/account-management'),
     html.A(html.Button('AWS Account Management'), href='/aws-account-management'),
     html.A(html.Button('OpenStack Account Management'), href='/openstack-account-management'),
-    html.A(html.Button('Key Management'), href='/key-management'),
-    html.A(html.Button('Migrate'), href='/migration')])
+    html.A(html.Button('Key Management'), href='/key-management')])
 
 errorLayout = html.Div([
     basicLayout,
