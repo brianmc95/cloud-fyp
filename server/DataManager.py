@@ -292,14 +292,21 @@ class DataManager:
     def get_current_data(self):
         datetime.datetime.today()
         query_use = {"DATE_TIME": {"$lt": datetime.datetime.now(),
-                                   "$gt": datetime.datetime.now() - datetime.timedelta(minutes=5)}
+                                   "$gt": datetime.datetime.now() - datetime.timedelta(minutes=10)}
                      }
+        self.logger.info(query_use)
         provider_query = {}
         info_df = pd.DataFrame(list(self.inst_info.find(provider_query)))
         usage_df = pd.DataFrame(list(self.inst_use.find(query_use)))
         vol_df = pd.DataFrame(list(self.vols.find(query_use)))
-
-        all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
+        self.logger.info("Records for instances: {}".format(info_df.count()))
+        self.logger.info("Records of instance usages: {}".format(usage_df.count()))
+        try:
+            all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
+        except KeyError as e:
+            self.logger.exception("Appears there is no data being collected currently")
+            self.logger.exception(e)
+            return []
 
         # Get the network usage in MB
         all_df["NETWORK_USAGE"] = all_df.apply(lambda row: (row["BYTES_RECV"] + row["BYTES_SENT"]) / 1048576, axis=1)
@@ -393,9 +400,14 @@ class DataManager:
 
         usage_df = self.__unpack(usage_df, "_id")
 
-        # TODO: if year_overall, merge the months, if month merge the days, if day just leave it?
-
-        all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
+        self.logger.info("Records for instances: {}".format(info_df.count()))
+        self.logger.info("Records of instance usages: {}".format(usage_df.count()))
+        try:
+            all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
+        except KeyError as e:
+            self.logger.exception("Appears there is no data being collected currently")
+            self.logger.exception(e)
+            return []
 
         self.logger.info("Joined the instance and usage info")
         # Get the network usage in MB
