@@ -135,8 +135,8 @@ class Account:
         post = {
             "INSTANCE_ID": node.id,
             "INSTANCE_NAME": name,
-            "SIZE": size.name,
-            "IMAGE": image.name,
+            "SIZE": size.id,
+            "IMAGE": image.id,
             "PROVIDER": provider,
             "CREATION": datetime.datetime.now()
         }

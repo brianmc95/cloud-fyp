@@ -291,18 +291,17 @@ class DataManager:
 
     def get_current_data(self):
         datetime.datetime.today()
-        query_use = {"DATE_TIME": {"$lt": datetime.datetime.now(),
-                                   "$gt": datetime.datetime.now() - datetime.timedelta(minutes=10)}
-                     }
+        query_use = {"DATE_TIME": {"$gte": (datetime.datetime.now() - datetime.timedelta(minutes=70))}} # Accounting for UTC
         self.logger.info(query_use)
         provider_query = {}
         info_df = pd.DataFrame(list(self.inst_info.find(provider_query)))
         usage_df = pd.DataFrame(list(self.inst_use.find(query_use)))
         vol_df = pd.DataFrame(list(self.vols.find(query_use)))
+
         self.logger.info("Records for instances: {}".format(info_df.count()))
         self.logger.info("Records of instance usages: {}".format(usage_df.count()))
         try:
-            all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
+            all_df = pd.merge(info_df, usage_df, on=["INSTANCE_ID", "PROVIDER"], how="right")
         except KeyError as e:
             self.logger.exception("Appears there is no data being collected currently")
             self.logger.exception(e)
@@ -330,7 +329,7 @@ class DataManager:
                     size_prices.append(0)
 
         all_df["COST"] = size_prices
-        return all_df[["TIMESTAMP", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
+        return all_df[["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
                        "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]].to_json()
 
     def get_specific_data(self, year, month=None, day=None):
@@ -393,11 +392,10 @@ class DataManager:
         usage_df = pd.DataFrame(list(self.inst_use.aggregate(pipeline)))
         vol_df = pd.DataFrame(list(self.vols.find(query_use)))
 
-        usage_df = self.__unpack(usage_df, "_id")
-
         self.logger.info("Records for instances: {}".format(info_df.count()))
         self.logger.info("Records of instance usages: {}".format(usage_df.count()))
         try:
+            usage_df = self.__unpack(usage_df, "_id")
             all_df = pd.merge(info_df, usage_df, on="INSTANCE_ID", how="right")
         except KeyError as e:
             self.logger.exception("Appears there is no data being collected currently")
@@ -415,12 +413,16 @@ class DataManager:
         # Do the costings
         size_prices = []
         for size, provider in zip(all_df["SIZE"], all_df["PROVIDER"]):
-            if provider == "AWS":
+            if provider == "aws":
                 size_obj = self.aws_prov.get_size(size)
+                self.logger.info("Working with size {}".format(size_obj))
                 size_prices.append(size_obj.price)
-            elif provider == "OPENSTACK":
+                self.logger.info("Working with price {}".format(size_obj.price))
+            elif provider == "openstack":
                 size_obj = self.open_prov.get_size(size)
+                self.logger.info("Working with size {}".format(size_obj))
                 size_prices.append(size_obj.price)
+                self.logger.info("Working with price {}".format(size_obj.price))
 
         self.logger.info("Dealt with costings, costs: {}".format(size_prices))
 
