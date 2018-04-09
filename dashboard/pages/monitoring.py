@@ -20,7 +20,6 @@ def get_columns():
 def get_current_data():
     json_df = dm.get_current_data()
     all_df = pd.read_json(json_df)
-    if all_df.size
     return all_df.to_dict("records")
 
 layout = html.Div([
