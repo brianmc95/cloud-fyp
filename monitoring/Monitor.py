@@ -42,7 +42,7 @@ def gen_report(instance_id, provider, previous_report):
               "DATE_TIME"   : now,
               "CPU_USAGE"   : psutil.cpu_percent(interval=5),
               "MEM_TOTAL"   : memory_usage.total,
-              "MEM__AVAIL"  : memory_usage.available,
+              "MEM_AVAIL"   : memory_usage.available,
               "DISK_USAGE"  : {},
               "CONNECTIONS" : None,
               "PACKETS_RECV": None,

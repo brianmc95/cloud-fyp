@@ -393,11 +393,6 @@ class DataManager:
         usage_df = pd.DataFrame(list(self.inst_use.aggregate(pipeline)))
         vol_df = pd.DataFrame(list(self.vols.find(query_use)))
 
-        # TODO: Do more to manage the case where there is no data.
-        if usage_df.size == 0:
-            self.logger.info("No results found and as such nothing to return")
-            return []
-
         usage_df = self.__unpack(usage_df, "_id")
 
         self.logger.info("Records for instances: {}".format(info_df.count()))
