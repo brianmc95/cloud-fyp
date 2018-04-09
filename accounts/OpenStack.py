@@ -20,16 +20,12 @@ class OpenStack(Account):
                                      ex_force_auth_url=auth_url,
                                      ex_force_auth_version=auth_version,
                                      ex_tenant_name=tenant_name)
-        loader = loading.get_plugin_loader('password')
-        auth = loader.load_from_options(
-            auth_url=auth_url,
-            username=access_name,
-            password=password,
-            project_id=project_id)
-        sesh = session.Session(auth=auth)
-        self.glance = Client(glance_version, session=sesh)
+        self.auth_url = auth_url
+        self.access_name = access_name
+        self.password=password
+        self.project_id = project_id
+        self.glance_version = glance_version
 
-        # TODO: deal with glance version Migration service.
 
     def list_networks(self):
         return self.node_driver.ex_list_networks()
@@ -184,5 +180,13 @@ class OpenStack(Account):
         return self.node_driver.ex_get_node_details(node_id)
 
     def create_image(self, image_name, container_format, disk_format, image_location):
+        loader = loading.get_plugin_loader('password')
+        auth = loader.load_from_options(
+            auth_url=self.auth_url,
+            username=self.access_name,
+            password=self.password,
+            project_id=self.project_id)
+        sesh = session.Session(auth=auth)
+        self.glance = Client(self.glance_version, session=sesh)
         image = self.glance.images.create(name=image_name, container_format=container_format, disk_format=disk_format)
         self.glance.images.update(image, copy_from=image_location)

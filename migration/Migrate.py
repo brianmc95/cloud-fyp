@@ -15,7 +15,7 @@ from server.DataManager import DataManager
 
 class Migrate:
 
-    def __init__(self, node, fromaws, node_key_file_loc, container=None, user=None, password=None):
+    def __init__(self, node, fromaws, node_key_file_loc, container=None, user="ubuntu", password=""):
         self.node = node
         self.fromaws = fromaws
         self.node_key_file_loc = node_key_file_loc
@@ -25,12 +25,19 @@ class Migrate:
         self.password = password
         self.__location = None
         self.__vols = []
-        self.__migration_vols = []
+        self.migration_vols = []
 
         self.logger = logging.getLogger(__name__)
 
         dm = DataManager()
         self.aws_prov, self.os_prov = dm.get_drivers()
+
+        if fromaws:
+            self.from_prov = self.aws_prov
+            self.recv_prov = self.os_prov
+        else:
+            self.from_prov = self.os_prov
+            self.recv_prov = self.aws_prov
 
     def deploy_S3(self):
         """
@@ -65,7 +72,7 @@ class Migrate:
 
         self.ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 
-        self.ssh.connect(ip, username='ubuntu', password='',
+        self.ssh.connect(ip, username=self.user, password=self.password,
                          key_filename=self.node_key_file_loc)
 
         self.logger.info("Connection created to node to be migrated.")
@@ -84,13 +91,18 @@ class Migrate:
             self.__vols.append(self.aws_prov.get_volume(volume_id))
             self.logger.debug("Volume attached to the migrated instance {}".format(volume_id))
 
-        migration_vols = []
         vol_count = 0
         mounts = "fghijklmnop"
         for vol in self.__vols:
             # Migration volumes need to be slightly larger than the ones being copied to them
-            migrate_vol = self.aws_prov.create_volume("migration_vol", vol.size + 2, location=self.__location)
-            self.__migration_vols.append(migrate_vol)
+            vol_loc = vol.extra["zone"]
+            location = None
+            for loc in self.aws_prov.list_locations():
+                if loc.name == vol_loc:
+                    location = loc
+                    break
+            migrate_vol = self.aws_prov.create_volume("migration_vol", vol.size + 2, location=location)
+            self.migration_vols.append(migrate_vol)
 
             device_name = "/dev/xvd{}".format(mounts[vol_count])
             mount_point = "/tmp/disk{}".format(vol_count)
@@ -103,7 +115,7 @@ class Migrate:
 
             if not success:
                 self.logger.critical("Volume could not be attached")
-                return
+                return False
             self.logger.info("Volume attached")
 
             cmd = "sudo mkfs.ext4 {}".format(device_name)
@@ -143,29 +155,38 @@ class Migrate:
 
         # Add aws credentials to the instance to be copied.
         aws_access_id, aws_secret_key = self.aws_prov.get_key_info()
-        # TODO: Add step to check if awscli is installed if not then install it manually
-        self.ssh.exec_command("pip install awscli --upgrade --user")
-        cmd = """aws configure set aws_access_key_id {};
-        aws configure set aws_secret_access_key {};
-        aws configure set default.region {}""".format(aws_access_id, aws_secret_key, self.__location)
-        self.logger.info("Running aws config command: {}".format(cmd))
+        cmd = "sudo apt-get install awscli -y;"
+        self.logger.info("Installing awscli command: {}".format(cmd))
+        stdin, stdout, stderr = self.ssh.exec_command(cmd)
+        self.logger.info(stdout.readlines())
+        self.logger.warning(stderr.readlines())
+
+        cmd = """
+        export AWS_ACCESS_KEY_ID={}
+        export AWS_SECRET_ACCESS_KEY={}
+        export AWS_DEFAULT_REGION={}
+        export AWS_DEFAULT_OUTPUT={}""".format(aws_access_id, aws_secret_key, self.aws_prov.region, "json")
+        self.logger.info("Configuring awscli command: {}".format(cmd))
         stdin, stdout, stderr = self.ssh.exec_command(cmd)
         self.logger.info(stdout.readlines())
         self.logger.warning(stderr.readlines())
 
         # Copy each volume to the s3
         vol_count = 0
-        for vol in self.__migration_vols:
-            cmd = "aws s3 cp /tmp/disk{}/disk{}.img s3://{}/".format(vol_count, vol_count, bucket_name)
+        for vol in self.migration_vols:
+            cmd = "aws s3 cp /tmp/disk{}/disk{}.img s3://{}/ --acl public-read".format(vol_count, vol_count, bucket_name)
             self.logger.info("AWS command to copy to S3: {}".format(cmd))
-            self.ssh.exec_command(cmd)
-            self.logger.info(stdout.readlines())
-            self.logger.warning(stderr.readlines())
+            transport = self.ssh.get_transport().open_session()
+            transport.exec_command(cmd)
+            if transport.recv_exit_status() > 1:
+                self.logger.info("Successfully uploaded file to S3")
+            else:
+                self.logger.error("Was unable to upload image to S3 exiting")
+                return False
 
             # Once copied to the s3 detach and destroy the volume
             self.aws_prov.detach_volume(vol)
             time.sleep(300)  # sometimes run into issues with this.
-            # TODO: Change this to a retry type deal
             try:
                 self.aws_prov.destroy_volume(vol)
                 self.logger.info("Volume removed and destroyed")
@@ -175,6 +196,18 @@ class Migrate:
             vol_count += 1
         return vol_count
 
-    def create_image(self):
-        self.os_prov.create_image()
-        #TODO: DO this on migration branch
+    def create_image(self, node, s3):
+        self.recv_prov.create_image(node.name, "bare", "raw", "https://s3-{}.amazonaws.com/{}/disk0.img".format(self.aws_prov.region, s3.name))
+
+    def migrate(self):
+        # if self.container:
+        #     self.container = self.deploy_S3()
+        self.connect_to_node()
+        # self.copy_image_local()
+        volumes = self.transfer_image_to_s3(self.container)
+        self.create_image(self.node, self.container)
+        mig_image = None
+        for image in self.os_prov.list_images():
+            if image.name == self.node.name:
+                mig_image = image
+        self.logger.info("Image created: {}".format(mig_image))

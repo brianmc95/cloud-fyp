@@ -194,7 +194,7 @@ class AWS(Account):
         if location is None:
             locations = self.node_driver.list_locations()
             location = [r for r in locations if r.availability_zone.region_name == self.region][0]
-        self.node_driver.create_volume(name=name, size=size, location=location)
+        return self.node_driver.create_volume(name=name, size=size, location=location)
 
     def create_container(self, container_name):
         container = self.storage_driver.create_container(container_name)
@@ -211,6 +211,9 @@ class AWS(Account):
 
     def list_availability_zones(self):
         return self.node_driver.ex_list_availability_zones()
+
+    def list_locations(self):
+        return self.node_driver.list_locations()
 
     def get_availability_zone(self, zone_name):
         for zone in self.node_driver.ex_list_availability_zones():
