@@ -332,7 +332,7 @@ class DataManager:
         except KeyError as e:
             self.logger.exception("Appears there is no data being collected currently")
             self.logger.exception(e)
-            return []
+            return json.dumps({})
 
     def get_specific_data(self, year, month=None, day=None):
         try:
@@ -422,6 +422,8 @@ class DataManager:
                     self.logger.info("Working with size {}".format(size_obj))
                     size_prices.append(size_obj.price)
                     self.logger.info("Working with price {}".format(size_obj.price))
+                else:
+                    size_prices.append(0.0)
 
             self.logger.info("Dealt with costings, costs: {}".format(size_prices))
 
@@ -434,7 +436,7 @@ class DataManager:
         except KeyError as e:
             self.logger.exception("Appears there is no data being collected currently")
             self.logger.exception(e)
-            return []
+            return json.dumps({})
 
     def __unpack(self, df, column, fillna=None):
         ret = None

@@ -17,6 +17,11 @@ def get_columns():
     return ["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
             "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]
 
+def get_current_data():
+    json_df = dm.get_current_data()
+    all_df = pd.read_json(json_df)
+    if all_df.size
+    return all_df.to_dict("records")
 
 layout = html.Div([
     html.Label("Year"),
@@ -39,7 +44,7 @@ layout = html.Div([
     html.H4('Usage DataTable'),
 
     dt.DataTable(
-        rows=[],   #dm.get_current_data(),
+        rows=get_current_data(),
 
         # optional - sets the order of columns
         columns=get_columns(),
@@ -119,9 +124,8 @@ def update_selected_row_indices(clickData, selected_row_indices):
     [Input('usage-table', 'rows'),
      Input('usage-table', 'selected_row_indices')])
 def update_figure(rows, selected_row_indices):
+    print(rows)
     dff = pd.DataFrame(rows)
-    print(dff)
-    print(dff.columns)
     fig = plotly.tools.make_subplots(
         rows=4, cols=1,
         subplot_titles=('CPU Usage', 'Memory Usage', 'Network Usage', 'Costing'),
