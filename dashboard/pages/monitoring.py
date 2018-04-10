@@ -11,8 +11,6 @@ dm = DataManager()
 years, months = dm.get_dates()
 days = range(1, 31)
 
-# What do I want in my table
-
 def get_columns():
     return ["DATE_TIME", "INSTANCE_ID", "INSTANCE_NAME", "PROVIDER", "CPU_USAGE",
             "MEMORY_USAGE", "MEMORY_TOTAL", "NETWORK_USAGE", "CONNECTIONS", "COST"]

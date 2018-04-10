@@ -10,7 +10,7 @@ from server.DataManager import DataManager
 dm = DataManager()
 
 def deal_with_bools():
-    accounts = dm.get_accounts("AWS")
+    accounts = dm.get_accounts("aws")
     accounts_fix = []
     for account in accounts:
         if account["SET_ACCOUNT"]:
@@ -67,7 +67,7 @@ layout = html.Div([
     dt.DataTable(
         rows=deal_with_bools(),
         # optional - sets the order of columns
-        columns=["ACCOUNT_NAME", "ACCOUNT_REGION", "SET_ACCOUNT"],
+        columns=["ACCOUNT_NAME", "SET_ACCOUNT"],
         row_selectable=True,
         selected_row_indices=[],
         id='aws-account-table'

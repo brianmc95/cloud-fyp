@@ -53,6 +53,13 @@ layout = html.Div([
         placeholder="Select security groups instance is in"
     ),
 
+    html.Label("Key"),
+    dcc.Dropdown(
+        id="key-dropdown",
+        searchable=False,
+        placeholder="Select a key to associate with this instance"
+    ),
+
     html.Label("Volume name"),
     dcc.Input(
         id="volume-name-input",
@@ -78,7 +85,7 @@ layout = html.Div([
     Output("image-dropdown", "options"),
     [Input("provider-dropdown", "value")])
 def set_provider_images(selected_provider):
-    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
         return [{"label": image.name, "value": image.id} for image in providers[selected_provider].list_images()]
     return ""
 
@@ -87,7 +94,7 @@ def set_provider_images(selected_provider):
     Output("size-dropdown", "options"),
     [Input("provider-dropdown", "value")])
 def set_provider_sizes(selected_provider):
-    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
         return [{"label": size.name, "value": size.id} for size in providers[selected_provider].list_sizes()]
     return ""
 
@@ -96,7 +103,7 @@ def set_provider_sizes(selected_provider):
     Output("networks-dropdown", "options"),
     [Input("provider-dropdown", "value")])
 def set_provider_networks(selected_provider):
-    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
         return [{"label": net.name, "value": net.id} for net in providers[selected_provider].list_networks()]
     return ""
 
@@ -105,7 +112,7 @@ def set_provider_networks(selected_provider):
     Output("security-dropdown", "options"),
     [Input("provider-dropdown", "value")])
 def set_provider_security_groups(selected_provider):
-    if selected_provider == "Vscaler":
+    if selected_provider == "OpenStack":
         return [{"label": sec_group.name, "value": sec_group.id} for sec_group in
                 providers[selected_provider].list_security_groups()]
     elif selected_provider == "Amazon Web Services":
@@ -115,10 +122,19 @@ def set_provider_security_groups(selected_provider):
 
 
 @app.callback(
+    Output("key-dropdown", "options"),
+    [Input("provider-dropdown", "value")])
+def set_provider_networks(selected_provider):
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
+        return [{"label": key.name, "value": key.name} for key in providers[selected_provider].list_key_pairs()]
+    return ""
+
+
+@app.callback(
     Output("image-dropdown", "searchable"),
     [Input("provider-dropdown", "value")])
 def set_images_active(selected_provider):
-    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
         return True
     return False
 
@@ -127,7 +143,7 @@ def set_images_active(selected_provider):
     Output("size-dropdown", "searchable"),
     [Input("provider-dropdown", "value")])
 def set_sizes_active(selected_provider):
-    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
         return True
     return False
 
@@ -136,7 +152,7 @@ def set_sizes_active(selected_provider):
     Output("networks-dropdown", "searchable"),
     [Input("provider-dropdown", "value")])
 def set_images_active(selected_provider):
-    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
         return True
     return False
 
@@ -145,7 +161,16 @@ def set_images_active(selected_provider):
     Output("security-dropdown", "searchable"),
     [Input("provider-dropdown", "value")])
 def set_sizes_active(selected_provider):
-    if selected_provider == "Amazon Web Services" or selected_provider == "Vscaler":
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
+        return True
+    return False
+
+
+@app.callback(
+    Output("key-dropdown", "searchable"),
+    [Input("provider-dropdown", "value")])
+def set_sizes_active(selected_provider):
+    if selected_provider == "Amazon Web Services" or selected_provider == "OpenStack":
         return True
     return False
 
@@ -159,20 +184,23 @@ def set_sizes_active(selected_provider):
            State("size-dropdown", "value"),
            State("networks-dropdown", "value"),
            State("security-dropdown", "value"),
+           State("key-dropdown", "value"),
            State("volume-name-input", "value"),
            State("volume-size-input", "value")])
-def launch_instance(n_clicks, provider, name, image_id, size_id, network_ids, security_ids, volume_name, volume_size):
-    deploy_image = providers[provider].get_image(image_id)
-    deploy_size = providers[provider].get_size(size_id)
-    deploy_nets = providers[provider].get_networks(network_ids)
-    deploy_sec = providers[provider].get_security_groups(security_ids)
+def launch_instance(n_clicks, provider, name, image_id, size_id, network_ids, security_ids, key_name, volume_name,
+                    volume_size):
+    if n_clicks:
+        deploy_image = providers[provider].get_image(image_id)
+        deploy_size = providers[provider].get_size(size_id)
+        deploy_nets = providers[provider].get_networks(network_ids)
+        deploy_sec = providers[provider].get_security_groups(security_ids)
 
-    vol = providers[provider].create_volume(name=volume_name, size=volume_size)
-    node = providers[provider].deploy_node_script(name=name,
-                                                  size=deploy_size,
-                                                  image=deploy_image,
-                                                  networks=deploy_nets,
-                                                  security_groups=deploy_sec,
-                                                  mon=True)
+        vol = providers[provider].create_volume(name=volume_name, size=volume_size)
+        node = providers[provider].create_node(name=name,
+                                               size=deploy_size,
+                                               image=deploy_image,
+                                               networks=deploy_nets,
+                                               security_groups=deploy_sec,
+                                               key_name=key_name)
 
-    providers[provider].attach_volume(node, vol)
+        providers[provider].attach_volume(node, vol)

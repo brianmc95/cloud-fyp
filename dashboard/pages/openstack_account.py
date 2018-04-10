@@ -10,7 +10,7 @@ from server.DataManager import DataManager
 dm = DataManager()
 
 def deal_with_bools():
-    accounts = dm.get_accounts("OPENSTACK")
+    accounts = dm.get_accounts("openstack")
     accounts_fix = []
     for account in accounts:
         if account["SET_ACCOUNT"]:
